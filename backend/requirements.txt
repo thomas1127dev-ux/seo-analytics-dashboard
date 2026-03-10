@@ -6,4 +6,5 @@ alembic==1.14.0
 mysqlclient==2.2.5
 google-auth==2.37.0
 google-analytics-data==0.18.10
+google-api-python-client==2.154.0
 
