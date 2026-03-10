@@ -5,6 +5,8 @@ import {
   fetchYandexSeoSummary,
   fetchYandexSeoQueries
 } from "../api/yandexSeo";
+import { SmartSelect } from "../components/SmartSelect";
+import { DateButton } from "../components/DateButton";
 
 const DEFAULT_DAYS = 7;
 
@@ -60,43 +62,32 @@ export function YandexSEOPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <select
-          className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm"
-          value={projectId ?? ""}
-          onChange={(e) => setProjectId(Number(e.target.value))}
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.domain})
-            </option>
-          ))}
-        </select>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-300">
-          <span>日期范围：</span>
-          <input
-            type="date"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <SmartSelect
+          label="站点"
+          value={projectId}
+          options={projects.map((p) => ({
+            value: p.id,
+            label: `${p.name} (${p.domain})`
+          }))}
+          onChange={(val) => setProjectId(Number(val))}
+        />
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+          <DateButton
+            label="起"
             value={startDate}
             max={endDate}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              setStartDate(e.target.value);
-            }}
+            onChange={setStartDate}
           />
-          <span>～</span>
-          <input
-            type="date"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+          <span className="text-slate-500">～</span>
+          <DateButton
+            label="止"
             value={endDate}
             min={startDate}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              setEndDate(e.target.value);
-            }}
+            onChange={setEndDate}
           />
           <button
-            className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+            className="ml-2 rounded-full border border-slate-700 px-3 py-1 text-[11px] text-slate-200 hover:border-emerald-400/70 hover:bg-slate-900/80"
             type="button"
             onClick={() => {
               const today = new Date();
@@ -148,16 +139,17 @@ export function YandexSEOPage() {
         </div>
       )}
 
-      <div>
-        <h2 className="mb-2 text-sm font-semibold text-slate-200">
-          查询词排行
-        </h2>
+      <div className="glass-card p-4">
+        <div className="section-title">
+          <span className="section-title-dot" />
+          <span>查询词排行</span>
+        </div>
         {queriesQuery.isLoading && <div>加载中...</div>}
         {queriesQuery.isError && (
           <div className="text-red-400 text-sm">查询词数据加载失败。</div>
         )}
         {queriesQuery.data && (
-          <table className="w-full text-sm border-collapse border border-slate-800 rounded">
+          <table className="mt-1 w-full border-collapse text-sm">
             <thead className="text-slate-400">
               <tr>
                 <th className="border-b border-slate-800 py-1 text-left">
@@ -222,7 +214,7 @@ function SeoKpi({
   const trendPositive = delta != null ? (invert ? delta < 0 : delta > 0) : null;
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+    <div className="glass-card p-3">
       <div className="text-xs text-slate-400 mb-1">{title}</div>
       <div className="text-lg font-semibold">
         {current != null ? `${current.toFixed(1)}${suffix}` : "-"}

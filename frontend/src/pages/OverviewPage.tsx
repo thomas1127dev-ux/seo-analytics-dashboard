@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
 import { fetchOverview, type MetricWithTrend } from "../api/overview";
+import { SmartSelect } from "../components/SmartSelect";
+import { DateButton } from "../components/DateButton";
 import {
   Line,
   LineChart,
@@ -54,43 +56,32 @@ export function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <select
-          className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm"
-          value={projectId ?? ""}
-          onChange={(e) => setProjectId(Number(e.target.value))}
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.domain})
-            </option>
-          ))}
-        </select>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-300">
-          <span>日期范围：</span>
-          <input
-            type="date"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <SmartSelect
+          label="站点"
+          value={projectId}
+          options={projects.map((p) => ({
+            value: p.id,
+            label: `${p.name} (${p.domain})`
+          }))}
+          onChange={(val) => setProjectId(Number(val))}
+        />
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+          <DateButton
+            label="起"
             value={startDate}
             max={endDate}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              setStartDate(e.target.value);
-            }}
+            onChange={setStartDate}
           />
-          <span>～</span>
-          <input
-            type="date"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+          <span className="text-slate-500">～</span>
+          <DateButton
+            label="止"
             value={endDate}
             min={startDate}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              setEndDate(e.target.value);
-            }}
+            onChange={setEndDate}
           />
           <button
-            className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+            className="ml-2 rounded-full border border-slate-700 px-3 py-1 text-[11px] text-slate-200 hover:border-emerald-400/70 hover:bg-slate-900/80"
             type="button"
             onClick={() => {
               const today = new Date();
@@ -107,7 +98,11 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {overviewQuery.isLoading && <div>加载中...</div>}
+      {overviewQuery.isLoading && (
+        <div className="glass-card flex items-center justify-center py-10 text-sm text-slate-300">
+          正在拉取概览数据…
+        </div>
+      )}
       {overviewQuery.isError && (
         <div className="text-red-400 text-sm">
           概览数据加载失败，请稍后重试。
@@ -193,7 +188,7 @@ function KpiCard({ title, metric, expectedDate, invert }: KpiCardProps) {
   const trendPositive = delta != null ? (invert ? delta < 0 : delta > 0) : null;
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+    <div className="glass-card p-4 transition-colors hover:border-emerald-500/60">
       <div className="text-xs text-slate-400 mb-1">
         {title}
         {lastPoint && lastPoint.date !== expectedDate && (
@@ -238,8 +233,11 @@ function TrendCard({ title, data, color }: TrendCardProps) {
   }));
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-      <div className="mb-2 text-xs text-slate-400">{title}</div>
+    <div className="glass-card p-4">
+      <div className="section-title">
+        <span className="section-title-dot" />
+        <span>{title}</span>
+      </div>
       <div className="h-44">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>

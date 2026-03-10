@@ -7,6 +7,8 @@ import {
   fetchGoogleSeoPages
 } from "../api/googleSeo";
 import type { SearchOverviewMetrics } from "../api/overview";
+import { SmartSelect } from "../components/SmartSelect";
+import { DateButton } from "../components/DateButton";
 import {
   Bar,
   BarChart,
@@ -83,43 +85,32 @@ export function GoogleSEOPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <select
-          className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm"
-          value={projectId ?? ""}
-          onChange={(e) => setProjectId(Number(e.target.value))}
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.domain})
-            </option>
-          ))}
-        </select>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-300">
-          <span>日期范围：</span>
-          <input
-            type="date"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <SmartSelect
+          label="站点"
+          value={projectId}
+          options={projects.map((p) => ({
+            value: p.id,
+            label: `${p.name} (${p.domain})`
+          }))}
+          onChange={(val) => setProjectId(Number(val))}
+        />
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+          <DateButton
+            label="起"
             value={startDate}
             max={endDate}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              setStartDate(e.target.value);
-            }}
+            onChange={setStartDate}
           />
-          <span>～</span>
-          <input
-            type="date"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+          <span className="text-slate-500">～</span>
+          <DateButton
+            label="止"
             value={endDate}
             min={startDate}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              setEndDate(e.target.value);
-            }}
+            onChange={setEndDate}
           />
           <button
-            className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+            className="ml-2 rounded-full border border-slate-700 px-3 py-1 text-[11px] text-slate-200 hover:border-emerald-400/70 hover:bg-slate-900/80"
             type="button"
             onClick={() => {
               const today = new Date();
@@ -165,17 +156,18 @@ export function GoogleSEOPage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-slate-200">
-            关键词点击 TOP
-          </h2>
+        <div className="glass-card p-4">
+          <div className="section-title">
+            <span className="section-title-dot" />
+            <span>关键词点击 TOP</span>
+          </div>
           {queriesQuery.isLoading && <div>加载中...</div>}
           {queriesQuery.isError && (
             <div className="text-red-400 text-sm">关键词数据加载失败。</div>
           )}
           {queriesQuery.data && (
-            <div className="space-y-3">
-              <div className="h-64 rounded border border-slate-800 bg-slate-900/60 p-2">
+            <div className="space-y-3 pt-1">
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={queriesQuery.data.items.slice(0, 15).map((i) => ({
@@ -209,17 +201,18 @@ export function GoogleSEOPage() {
             </div>
           )}
         </div>
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-slate-200">
-            页面点击 TOP
-          </h2>
+        <div className="glass-card p-4">
+          <div className="section-title">
+            <span className="section-title-dot" />
+            <span>页面点击 TOP</span>
+          </div>
           {pagesQuery.isLoading && <div>加载中...</div>}
           {pagesQuery.isError && (
             <div className="text-red-400 text-sm">页面数据加载失败。</div>
           )}
           {pagesQuery.data && (
-            <div className="space-y-3">
-              <div className="h-64 rounded border border-slate-800 bg-slate-900/60 p-2">
+            <div className="space-y-3 pt-1">
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={pagesQuery.data.items.slice(0, 15).map((i) => ({
@@ -297,8 +290,8 @@ function SeoKpi({
   const trendPositive = delta != null ? (invert ? delta < 0 : delta > 0) : null;
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-      <div className="text-xs text-slate-400 mb-1">
+    <div className="glass-card p-3">
+      <div className="text-xs text-slate-400 mb-1 flex items-center justify-between">
         {title}
         {lastPoint && lastPoint.date !== expectedDate && (
           <span className="ml-1 text-[10px] text-slate-500">

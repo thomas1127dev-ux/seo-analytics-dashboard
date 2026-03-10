@@ -3,6 +3,38 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-950 text-slate-50;
+  @apply bg-slate-950 text-slate-50 antialiased;
+}
+
+.glass-card {
+  @apply rounded-xl border border-slate-800/80 bg-slate-900/60 shadow-lg shadow-black/40 backdrop-blur;
+}
+
+.section-title {
+  @apply mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400;
+}
+
+.section-title-dot {
+  @apply h-1.5 w-1.5 rounded-full bg-emerald-400;
+}
+
+/* react-day-picker 覆盖为更柔和的白色选中样式 */
+.rdp-root {
+  --rdp-accent-color: #e5e7eb;
+  --rdp-accent-background-color: #e5e7eb;
+  --rdp-background-color: transparent;
+  --rdp-color: #e5e7eb;
+}
+
+.rdp-day_selected,
+.rdp-day_selected:focus-visible,
+.rdp-day_selected:hover {
+  background-color: #e5e7eb !important;
+  color: #020617 !important;
+}
+
+.rdp-day_today:not(.rdp-day_selected) {
+  outline: 1px solid #e5e7eb55;
+  outline-offset: 1px;
 }
 
