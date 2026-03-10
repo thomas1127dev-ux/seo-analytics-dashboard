@@ -251,20 +251,44 @@ def fetch_ga4_page_daily(
     )
 
     response = client.run_report(request)
-    results: list[dict[str, Optional[float]]] = []
+
+    # 用 page_path 聚合，防止 API 返回重复行导致唯一键冲突。
+    aggregated: dict[str, dict[str, float]] = {}
 
     for row in response.rows:
         page_path = row.dimension_values[0].value or "(not set)"
-        page_views = float(row.metric_values[0].value or 0.0)
+        pv = float(row.metric_values[0].value or 0.0)
         avg_time = float(row.metric_values[1].value or 0.0)
         bounce_rate = float(row.metric_values[2].value or 0.0)
 
+        if page_path not in aggregated:
+            aggregated[page_path] = {
+                "page_views": pv,
+                "avg_engagement_time": avg_time,
+                "bounce_rate": bounce_rate,
+            }
+        else:
+            prev = aggregated[page_path]
+            prev_pv = prev["page_views"]
+            # 加权平均更新
+            total_pv = prev_pv + pv if prev_pv + pv > 0 else 0.0
+            if total_pv > 0:
+                prev["avg_engagement_time"] = (
+                    prev["avg_engagement_time"] * prev_pv + avg_time * pv
+                ) / total_pv
+                prev["bounce_rate"] = (
+                    prev["bounce_rate"] * prev_pv + bounce_rate * pv
+                ) / total_pv
+            prev["page_views"] = total_pv
+
+    results: list[dict[str, Optional[float]]] = []
+    for page_path, vals in aggregated.items():
         results.append(
             {
                 "page_path": page_path,
-                "page_views": page_views,
-                "avg_engagement_time": avg_time,
-                "bounce_rate": bounce_rate,
+                "page_views": vals["page_views"],
+                "avg_engagement_time": vals["avg_engagement_time"],
+                "bounce_rate": vals["bounce_rate"],
             }
         )
 
