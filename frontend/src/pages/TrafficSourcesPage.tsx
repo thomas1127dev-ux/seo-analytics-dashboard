@@ -2,8 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
 import { fetchTrafficSources } from "../api/traffic";
-import { SmartSelect } from "../components/SmartSelect";
-import { DateButton } from "../components/DateButton";
+import { FiltersRow } from "../components/FiltersRow";
 import {
   ResponsiveContainer,
   PieChart,
@@ -60,47 +59,16 @@ export function TrafficSourcesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <SmartSelect
-          label="站点"
-          value={projectId}
-          options={projects.map((p) => ({
-            value: p.id,
-            label: `${p.name} (${p.domain})`
-          }))}
-          onChange={(val) => setProjectId(Number(val))}
-        />
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
-          <DateButton
-            label="起"
-            value={startDate}
-            max={endDate}
-            onChange={setStartDate}
-          />
-          <span className="text-slate-500">～</span>
-          <DateButton
-            label="止"
-            value={endDate}
-            min={startDate}
-            onChange={setEndDate}
-          />
-          <button
-            className="ml-2 rounded-full border border-slate-700 px-3 py-1 text-[11px] text-slate-200 hover:border-emerald-400/70 hover:bg-slate-900/80"
-            type="button"
-            onClick={() => {
-              const today = new Date();
-              const end = formatDate(today);
-              const startDateObj = new Date(today);
-              startDateObj.setDate(startDateObj.getDate() - (DEFAULT_DAYS - 1));
-              const start = formatDate(startDateObj);
-              setStartDate(start);
-              setEndDate(end);
-            }}
-          >
-            最近 7 天
-          </button>
-        </div>
-      </div>
+      <FiltersRow
+        projects={projects}
+        projectId={projectId}
+        onProjectChange={setProjectId}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        defaultDays={DEFAULT_DAYS}
+      />
 
       {trafficQuery.isLoading && (
         <div className="glass-card flex items-center justify-center py-10 text-sm text-slate-300">
