@@ -2,6 +2,5 @@ docs/
 bold-syntax-384108-da6937288337.json
 backend/.env
 backend/.venv
-backend/alembic/__pycache__
+__pycache__
 backend/alembic/versions
-backend/app/__pycache__

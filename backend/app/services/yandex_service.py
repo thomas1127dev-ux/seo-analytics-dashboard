@@ -103,3 +103,82 @@ def ingest_yandex_daily_for_project(
     return record
 
 
+def fetch_yandex_query_daily(
+    host: str,
+    target_date: date,
+) -> list[dict[str, Optional[float]]]:
+    """
+    占位实现：获取 Yandex 查询词维度数据。
+
+    由于具体使用的 Yandex 产品与 API 端点尚未确定，这里仅保留结构和错误处理约定：
+    - 若未配置 token，则返回空列表；
+    - 若实际对接接口返回 RESOURCE_NOT_FOUND，应抛出 YandexResourceNotFound；
+    - 其余错误抛出 RuntimeError。
+    """
+    settings = get_settings()
+    token = settings.yandex_access_token
+    if not token:
+        return []
+
+    # TODO: 根据公司实际选用的 Yandex API 完成实现。
+    return []
+
+
+def ingest_yandex_query_daily_for_project(
+    db: Session,
+    project: models.Project,
+    target_date: date,
+) -> int:
+    """
+    针对单个 project + 日期，从 Yandex 拉取查询词维度数据并写入 / 更新 yandex_query_daily。
+    若遇到 RESOURCE_NOT_FOUND 或未配置 token/host，安全返回 0。
+    """
+    if not project.yandex_host:
+        return 0
+
+    try:
+        rows = fetch_yandex_query_daily(project.yandex_host, target_date)
+    except YandexResourceNotFound:
+        return 0
+
+    if not rows:
+        return 0
+
+    count = 0
+    for item in rows:
+        query = str(item["query"])
+        existing: Optional[models.YandexQueryDaily] = (
+            db.query(models.YandexQueryDaily)
+            .filter(
+                models.YandexQueryDaily.project_id == project.id,
+                models.YandexQueryDaily.date == target_date,
+                models.YandexQueryDaily.query == query,
+            )
+            .first()
+        )
+
+        payload = {
+            "clicks": int(item.get("clicks") or 0),
+            "impressions": int(item.get("impressions") or 0),
+            "ctr": float(item.get("ctr") or 0.0),
+        }
+
+        if existing:
+            for key, value in payload.items():
+                setattr(existing, key, value)
+            db.add(existing)
+        else:
+            record = models.YandexQueryDaily(
+                project_id=project.id,
+                date=target_date,
+                query=query,
+                **payload,
+            )
+            db.add(record)
+
+        count += 1
+
+    db.commit()
+    return count
+
+

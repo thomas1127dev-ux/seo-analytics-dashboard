@@ -4,9 +4,10 @@ import json
 from datetime import date
 from typing import Optional
 
-from google.analytics.data_v1beta import (
+from google.analytics.data_v1beta import (  # type: ignore
     BetaAnalyticsDataClient,
     DateRange,
+    Dimension,
     Metric,
     RunReportRequest,
 )
@@ -127,5 +128,201 @@ def ingest_ga4_daily_for_project(
     db.commit()
     db.refresh(record)
     return record
+
+
+def fetch_ga4_channel_daily(
+    property_id: str,
+    target_date: date,
+) -> list[dict[str, Optional[float]]]:
+    """
+    获取按渠道（channel）维度的 GA4 指标，用于填充 ga4_channel_daily。
+    维度：sessionDefaultChannelGroup
+    指标：sessions、totalUsers、screenPageViews
+    """
+    client = _build_client()
+    date_str = target_date.strftime("%Y-%m-%d")
+
+    request = RunReportRequest(
+        property=f"properties/{property_id}",
+        date_ranges=[DateRange(start_date=date_str, end_date=date_str)],
+        dimensions=[Dimension(name="sessionDefaultChannelGroup")],
+        metrics=[
+            Metric(name="sessions"),
+            Metric(name="totalUsers"),
+            Metric(name="screenPageViews"),
+        ],
+    )
+
+    response = client.run_report(request)
+    results: list[dict[str, Optional[float]]] = []
+
+    for row in response.rows:
+        channel = row.dimension_values[0].value or "Other"
+        sessions = float(row.metric_values[0].value or 0.0)
+        users = float(row.metric_values[1].value or 0.0)
+        page_views = float(row.metric_values[2].value or 0.0)
+
+        results.append(
+            {
+                "channel": channel,
+                "sessions": sessions,
+                "users": users,
+                "page_views": page_views,
+            }
+        )
+
+    return results
+
+
+def ingest_ga4_channel_daily_for_project(
+    db: Session,
+    project: models.Project,
+    target_date: date,
+) -> int:
+    """
+    填充指定 project + 日期的 ga4_channel_daily。
+    返回写入/更新的记录数量。
+    """
+    if not project.ga4_property_id:
+        raise ValueError(f"Project {project.project_key} 未配置 ga4_property_id")
+
+    rows = fetch_ga4_channel_daily(project.ga4_property_id, target_date)
+    if not rows:
+        return 0
+
+    count = 0
+    for item in rows:
+        channel = str(item["channel"])
+        existing: Optional[models.Ga4ChannelDaily] = (
+            db.query(models.Ga4ChannelDaily)
+            .filter(
+                models.Ga4ChannelDaily.project_id == project.id,
+                models.Ga4ChannelDaily.date == target_date,
+                models.Ga4ChannelDaily.channel == channel,
+            )
+            .first()
+        )
+
+        payload = {
+            "sessions": int(item["sessions"] or 0),
+            "users": int(item["users"] or 0),
+            "page_views": int(item["page_views"] or 0),
+        }
+
+        if existing:
+            for key, value in payload.items():
+                setattr(existing, key, value)
+            db.add(existing)
+        else:
+            record = models.Ga4ChannelDaily(
+                project_id=project.id,
+                date=target_date,
+                channel=channel,
+                **payload,
+            )
+            db.add(record)
+
+        count += 1
+
+    db.commit()
+    return count
+
+
+def fetch_ga4_page_daily(
+    property_id: str,
+    target_date: date,
+) -> list[dict[str, Optional[float]]]:
+    """
+    获取按页面（pagePath）维度的 GA4 指标，用于填充 ga4_page_daily。
+    指标：pageViews、averageSessionDuration、bounceRate。
+    """
+    client = _build_client()
+    date_str = target_date.strftime("%Y-%m-%d")
+
+    request = RunReportRequest(
+        property=f"properties/{property_id}",
+        date_ranges=[DateRange(start_date=date_str, end_date=date_str)],
+        dimensions=[Dimension(name="pagePath")],
+        metrics=[
+            Metric(name="screenPageViews"),
+            Metric(name="averageSessionDuration"),
+            Metric(name="bounceRate"),
+        ],
+    )
+
+    response = client.run_report(request)
+    results: list[dict[str, Optional[float]]] = []
+
+    for row in response.rows:
+        page_path = row.dimension_values[0].value or "(not set)"
+        page_views = float(row.metric_values[0].value or 0.0)
+        avg_time = float(row.metric_values[1].value or 0.0)
+        bounce_rate = float(row.metric_values[2].value or 0.0)
+
+        results.append(
+            {
+                "page_path": page_path,
+                "page_views": page_views,
+                "avg_engagement_time": avg_time,
+                "bounce_rate": bounce_rate,
+            }
+        )
+
+    return results
+
+
+def ingest_ga4_page_daily_for_project(
+    db: Session,
+    project: models.Project,
+    target_date: date,
+) -> int:
+    """
+    填充指定 project + 日期的 ga4_page_daily。
+    返回写入/更新的记录数量。
+    """
+    if not project.ga4_property_id:
+        raise ValueError(f"Project {project.project_key} 未配置 ga4_property_id")
+
+    rows = fetch_ga4_page_daily(project.ga4_property_id, target_date)
+    if not rows:
+        return 0
+
+    count = 0
+    for item in rows:
+        page_path = str(item["page_path"])
+
+        existing: Optional[models.Ga4PageDaily] = (
+            db.query(models.Ga4PageDaily)
+            .filter(
+                models.Ga4PageDaily.project_id == project.id,
+                models.Ga4PageDaily.date == target_date,
+                models.Ga4PageDaily.page_path == page_path,
+            )
+            .first()
+        )
+
+        payload = {
+            "page_views": int(item["page_views"] or 0),
+            "avg_engagement_time": float(item["avg_engagement_time"] or 0.0),
+            "bounce_rate": float(item["bounce_rate"] or 0.0),
+        }
+
+        if existing:
+            for key, value in payload.items():
+                setattr(existing, key, value)
+            db.add(existing)
+        else:
+            record = models.Ga4PageDaily(
+                project_id=project.id,
+                date=target_date,
+                page_path=page_path,
+                **payload,
+            )
+            db.add(record)
+
+        count += 1
+
+    db.commit()
+    return count
 
 
