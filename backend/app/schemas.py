@@ -83,3 +83,18 @@ class TrafficSourcesResponse(BaseModel):
     trend_7d: list[TrafficTrendPoint]
 
 
+class ContentPageItem(BaseModel):
+    page_path: str
+    page_views: float
+    avg_engagement_time: float
+    bounce_rate: float
+    growth_7d: float
+
+
+class ContentPerformanceResponse(BaseModel):
+    project_id: int
+    start_date: date
+    end_date: date
+    pages: list[ContentPageItem]
+
+
