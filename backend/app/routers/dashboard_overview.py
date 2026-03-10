@@ -46,7 +46,7 @@ def get_overview(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：总览页聚合接口。
+    总览页聚合接口。
     - 返回 GA4 / GSC / Yandex 的汇总指标 + 7 天趋势 + 与昨日对比。
     - 仅按 project_id 过滤，不做用户权限校验。
     """

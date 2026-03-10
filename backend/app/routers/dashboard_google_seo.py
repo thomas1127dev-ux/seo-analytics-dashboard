@@ -31,7 +31,7 @@ def get_google_seo_summary(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：Google SEO 汇总指标（展示、点击、CTR、平均排名 + 趋势）。
+    Google SEO 汇总指标（展示、点击、CTR、平均排名 + 趋势）。
     复用与总览页相同的 SearchOverviewMetrics 结构。
     """
     if start_date > end_date:
@@ -87,7 +87,7 @@ def get_google_seo_queries(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：Google SEO 关键词排行。
+    Google SEO 关键词排行。
     """
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 不能晚于 end_date")
@@ -145,7 +145,7 @@ def get_google_seo_pages(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：Google SEO 页面排行。
+    Google SEO 页面排行。
     """
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 不能晚于 end_date")

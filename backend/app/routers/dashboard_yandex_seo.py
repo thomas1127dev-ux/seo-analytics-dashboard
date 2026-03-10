@@ -31,7 +31,7 @@ def get_yandex_seo_summary(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：Yandex SEO 汇总指标（展示、点击、CTR、平均排名 + 趋势）。
+    Yandex SEO 汇总指标（展示、点击、CTR、平均排名 + 趋势）。
     结构与 Google SEO 保持一致。
     """
     if start_date > end_date:
@@ -87,7 +87,7 @@ def get_yandex_seo_queries(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：Yandex SEO 关键词排行（不提供页面维度）。
+    Yandex SEO 关键词排行（不提供页面维度）。
     """
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 不能晚于 end_date")

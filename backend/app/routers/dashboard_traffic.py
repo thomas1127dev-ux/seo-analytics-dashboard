@@ -21,7 +21,7 @@ def get_traffic_sources(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：流量来源页接口。
+    流量来源页接口。
     - 返回各渠道（channel）的会话/用户/PV 占比；
     - 返回按日期 + 渠道的 7 天 sessions 趋势。
     """

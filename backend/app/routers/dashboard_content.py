@@ -22,7 +22,7 @@ def get_content_performance(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：内容表现页接口。
+    内容表现页接口。
     - 返回 Top N 页面：PV、平均参与时长、跳出率、7 天增长量。
     - 7 天增长量：当前区间总 PV 与前一等长区间总 PV 的差值。
     """

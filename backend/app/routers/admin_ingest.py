@@ -33,7 +33,7 @@ def ingest_ga4_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：手动触发某个项目在指定日期的 GA4 日汇总数据采集。
+    手动触发某个项目在指定日期的 GA4 日汇总数据采集。
     后续可替换为定时任务或批量任务入口。
     """
     project = (
@@ -70,7 +70,7 @@ def ingest_gsc_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：手动触发某个项目在指定日期的 GSC 日汇总数据采集。
+    手动触发某个项目在指定日期的 GSC 日汇总数据采集。
     """
     project = (
         db.query(models.Project)
@@ -104,7 +104,7 @@ def ingest_ga4_channel_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：采集 GA4 渠道维度数据并写入 ga4_channel_daily。
+    采集 GA4 渠道维度数据并写入 ga4_channel_daily。
     """
     project = (
         db.query(models.Project)
@@ -133,7 +133,7 @@ def ingest_ga4_page_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：采集 GA4 页面维度数据并写入 ga4_page_daily。
+    采集 GA4 页面维度数据并写入 ga4_page_daily。
     """
     project = (
         db.query(models.Project)
@@ -162,7 +162,7 @@ def ingest_gsc_query_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：采集 GSC 关键词维度数据并写入 gsc_query_daily。
+    采集 GSC 关键词维度数据并写入 gsc_query_daily。
     """
     project = (
         db.query(models.Project)
@@ -191,7 +191,7 @@ def ingest_gsc_page_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：采集 GSC 页面维度数据并写入 gsc_page_daily。
+    采集 GSC 页面维度数据并写入 gsc_page_daily。
     """
     project = (
         db.query(models.Project)
@@ -220,7 +220,7 @@ def ingest_yandex_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：手动触发某个项目在指定日期的 Yandex 日汇总数据采集。
+    手动触发某个项目在指定日期的 Yandex 日汇总数据采集。
     若 Yandex 未配置或返回 RESOURCE_NOT_FOUND，则安全返回无数据说明。
     """
     project = (
@@ -260,7 +260,7 @@ def ingest_yandex_query_daily(
     db: Session = Depends(get_db),
 ):
     """
-    无权限版：采集 Yandex 查询词维度数据并写入 yandex_query_daily。
+    采集 Yandex 查询词维度数据并写入 yandex_query_daily。
     当前实现为占位逻辑，需要在明确 Yandex API 后补齐。
     """
     project = (
