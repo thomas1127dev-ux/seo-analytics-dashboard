@@ -2,6 +2,19 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
 import { fetchTrafficSources } from "../api/traffic";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
 
 const DEFAULT_DAYS = 7;
 
@@ -74,89 +87,96 @@ export function TrafficSourcesPage() {
             <h2 className="mb-2 text-sm font-semibold text-slate-200">
               来源占比
             </h2>
-            <table className="w-full text-sm border-collapse">
-              <thead className="text-slate-400">
-                <tr>
-                  <th className="border-b border-slate-800 py-1 text-left">
-                    渠道
-                  </th>
-                  <th className="border-b border-slate-800 py-1 text-right">
-                    会话
-                  </th>
-                  <th className="border-b border-slate-800 py-1 text-right">
-                    用户
-                  </th>
-                  <th className="border-b border-slate-800 py-1 text-right">
-                    PV
-                  </th>
-                  <th className="border-b border-slate-800 py-1 text-right">
-                    占比
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {trafficQuery.data.sources.map((s) => (
-                  <tr key={s.channel} className="border-b border-slate-900">
-                    <td className="py-1">{s.channel}</td>
-                    <td className="py-1 text-right">
-                      {Math.round(s.sessions).toLocaleString("zh-CN")}
-                    </td>
-                    <td className="py-1 text-right">
-                      {Math.round(s.users).toLocaleString("zh-CN")}
-                    </td>
-                    <td className="py-1 text-right">
-                      {Math.round(s.page_views).toLocaleString("zh-CN")}
-                    </td>
-                    <td className="py-1 text-right">
-                      {(s.ratio * 100).toFixed(1)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="h-64 rounded border border-slate-800 bg-slate-900/60 p-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={trafficQuery.data.sources}
+                    dataKey="sessions"
+                    nameKey="channel"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {trafficQuery.data.sources.map((_, idx) => (
+                      <Cell
+                        key={idx}
+                        fill={["#22c55e", "#38bdf8", "#f97316", "#a855f7", "#e11d48"][
+                          idx % 5
+                        ]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#020617",
+                      borderColor: "#1e293b",
+                      borderRadius: 8
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
           <div>
             <h2 className="mb-2 text-sm font-semibold text-slate-200">
               会话趋势（按渠道）
             </h2>
-            <div className="text-xs text-slate-400">
-              这里先用表格展示：日期 × 渠道 × 会话数，后续可替换为折线图。
-            </div>
-            <div className="mt-2 max-h-64 overflow-auto border border-slate-800 rounded">
-              <table className="w-full text-xs border-collapse">
-                <thead className="text-slate-400 sticky top-0 bg-slate-950">
-                  <tr>
-                    <th className="border-b border-slate-800 py-1 text-left">
-                      日期
-                    </th>
-                    <th className="border-b border-slate-800 py-1 text-left">
-                      渠道
-                    </th>
-                    <th className="border-b border-slate-800 py-1 text-right">
-                      会话数
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trafficQuery.data.trend_7d.map((p, idx) => (
-                    <tr
-                      key={`${p.date}-${p.channel}-${idx}`}
-                      className="border-b border-slate-900"
-                    >
-                      <td className="py-1">{p.date}</td>
-                      <td className="py-1">{p.channel}</td>
-                      <td className="py-1 text-right">
-                        {Math.round(p.sessions).toLocaleString("zh-CN")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="h-64 rounded border border-slate-800 bg-slate-900/60 p-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={aggregateTrend(trafficQuery.data.trend_7d)}
+                  margin={{ left: -20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="date" stroke="#64748b" />
+                  <YAxis stroke="#64748b" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#020617",
+                      borderColor: "#1e293b",
+                      borderRadius: 8
+                    }}
+                  />
+                  {Object.keys(
+                    aggregateTrend(trafficQuery.data.trend_7d)[0] ?? {}
+                  )
+                    .filter((k) => k !== "date")
+                    .map((ch, idx) => (
+                      <Line
+                        key={ch}
+                        type="monotone"
+                        dataKey={ch}
+                        name={ch}
+                        stroke={
+                          ["#22c55e", "#38bdf8", "#f97316", "#a855f7", "#e11d48"][
+                            idx % 5
+                          ]
+                        }
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    ))}
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function aggregateTrend(
+  points: { date: string; channel: string; sessions: number }[]
+) {
+  const map: Record<string, Record<string, number>> = {};
+  for (const p of points) {
+    if (!map[p.date]) map[p.date] = { date: p.date } as any;
+    map[p.date][p.channel] = (map[p.date][p.channel] || 0) + p.sessions;
+  }
+  return Object.values(map);
 }
 

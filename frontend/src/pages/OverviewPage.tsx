@@ -2,6 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
 import { fetchOverview } from "../api/overview";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
 
 const DEFAULT_DAYS = 7;
 
@@ -71,39 +80,54 @@ export function OverviewPage() {
       )}
 
       {overviewQuery.data && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <KpiCard
-            title="日活跃用户"
-            value={overviewQuery.data.ga4.dau.current}
-            yesterday={overviewQuery.data.ga4.dau.yesterday}
-          />
-          <KpiCard
-            title="会话数"
-            value={overviewQuery.data.ga4.sessions.current}
-            yesterday={overviewQuery.data.ga4.sessions.yesterday}
-          />
-          <KpiCard
-            title="页面浏览量"
-            value={overviewQuery.data.ga4.page_views.current}
-            yesterday={overviewQuery.data.ga4.page_views.yesterday}
-          />
-          <KpiCard
-            title="GSC 展示"
-            value={overviewQuery.data.gsc.impressions.current}
-            yesterday={overviewQuery.data.gsc.impressions.yesterday}
-          />
-          <KpiCard
-            title="GSC 点击"
-            value={overviewQuery.data.gsc.clicks.current}
-            yesterday={overviewQuery.data.gsc.clicks.yesterday}
-          />
-          <KpiCard
-            title="GSC 平均排名"
-            value={overviewQuery.data.gsc.avg_position.current}
-            yesterday={overviewQuery.data.gsc.avg_position.yesterday}
-            invert
-          />
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-3">
+            <KpiCard
+              title="日活跃用户"
+              value={overviewQuery.data.ga4.dau.current}
+              yesterday={overviewQuery.data.ga4.dau.yesterday}
+            />
+            <KpiCard
+              title="会话数"
+              value={overviewQuery.data.ga4.sessions.current}
+              yesterday={overviewQuery.data.ga4.sessions.yesterday}
+            />
+            <KpiCard
+              title="页面浏览量"
+              value={overviewQuery.data.ga4.page_views.current}
+              yesterday={overviewQuery.data.ga4.page_views.yesterday}
+            />
+            <KpiCard
+              title="GSC 展示"
+              value={overviewQuery.data.gsc.impressions.current}
+              yesterday={overviewQuery.data.gsc.impressions.yesterday}
+            />
+            <KpiCard
+              title="GSC 点击"
+              value={overviewQuery.data.gsc.clicks.current}
+              yesterday={overviewQuery.data.gsc.clicks.yesterday}
+            />
+            <KpiCard
+              title="GSC 平均排名"
+              value={overviewQuery.data.gsc.avg_position.current}
+              yesterday={overviewQuery.data.gsc.avg_position.yesterday}
+              invert
+            />
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <TrendCard
+              title="会话趋势（GA4）"
+              data={overviewQuery.data.ga4.sessions.trend_7d}
+              color="#22c55e"
+            />
+            <TrendCard
+              title="点击趋势（GSC）"
+              data={overviewQuery.data.gsc.clicks.trend_7d}
+              color="#38bdf8"
+            />
+          </div>
+        </>
       )}
     </div>
   );
@@ -146,6 +170,48 @@ function KpiCard({ title, value, yesterday, invert }: KpiCardProps) {
           {delta.toFixed(1)}%
         </div>
       )}
+    </div>
+  );
+}
+
+interface TrendCardProps {
+  title: string;
+  data: { date: string; value: number | null }[];
+  color: string;
+}
+
+function TrendCard({ title, data, color }: TrendCardProps) {
+  const chartData = data.map((d) => ({
+    date: d.date.slice(5), // MM-DD
+    value: d.value ?? 0
+  }));
+
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+      <div className="mb-2 text-xs text-slate-400">{title}</div>
+      <div className="h-44">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <XAxis dataKey="date" stroke="#64748b" />
+            <YAxis stroke="#64748b" />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#020617",
+                borderColor: "#1e293b",
+                borderRadius: 8
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
