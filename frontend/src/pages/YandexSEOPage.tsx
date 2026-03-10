@@ -14,14 +14,13 @@ function formatDate(d: Date) {
 
 export function YandexSEOPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
-
-  const today = useMemo(() => new Date(), []);
-  const startDate = useMemo(() => {
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
     const d = new Date(today);
     d.setDate(d.getDate() - (DEFAULT_DAYS - 1));
     return formatDate(d);
-  }, [today]);
-  const endDate = useMemo(() => formatDate(today), [today]);
+  });
+  const [endDate, setEndDate] = useState(() => formatDate(new Date()));
 
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -73,8 +72,44 @@ export function YandexSEOPage() {
             </option>
           ))}
         </select>
-        <div className="text-sm text-slate-300">
-          Yandex SEO（{startDate} ～ {endDate}）
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-300">
+          <span>日期范围：</span>
+          <input
+            type="date"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+            value={startDate}
+            max={endDate}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setStartDate(e.target.value);
+            }}
+          />
+          <span>～</span>
+          <input
+            type="date"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+            value={endDate}
+            min={startDate}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setEndDate(e.target.value);
+            }}
+          />
+          <button
+            className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+            type="button"
+            onClick={() => {
+              const today = new Date();
+              const end = formatDate(today);
+              const startDateObj = new Date(today);
+              startDateObj.setDate(startDateObj.getDate() - (DEFAULT_DAYS - 1));
+              const start = formatDate(startDateObj);
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          >
+            最近 7 天
+          </button>
         </div>
       </div>
 

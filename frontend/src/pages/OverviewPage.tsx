@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
-import { fetchOverview } from "../api/overview";
+import { fetchOverview, type MetricWithTrend } from "../api/overview";
 import {
   Line,
   LineChart,
@@ -20,14 +20,13 @@ function formatDate(d: Date) {
 
 export function OverviewPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
-
-  const today = useMemo(() => new Date(), []);
-  const startDate = useMemo(() => {
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
     const d = new Date(today);
     d.setDate(d.getDate() - (DEFAULT_DAYS - 1));
     return formatDate(d);
-  }, [today]);
-  const endDate = useMemo(() => formatDate(today), [today]);
+  });
+  const [endDate, setEndDate] = useState(() => formatDate(new Date()));
 
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -67,8 +66,44 @@ export function OverviewPage() {
             </option>
           ))}
         </select>
-        <div className="text-sm text-slate-300">
-          日期范围：{startDate} ～ {endDate}
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-300">
+          <span>日期范围：</span>
+          <input
+            type="date"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+            value={startDate}
+            max={endDate}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setStartDate(e.target.value);
+            }}
+          />
+          <span>～</span>
+          <input
+            type="date"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+            value={endDate}
+            min={startDate}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setEndDate(e.target.value);
+            }}
+          />
+          <button
+            className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+            type="button"
+            onClick={() => {
+              const today = new Date();
+              const end = formatDate(today);
+              const startDateObj = new Date(today);
+              startDateObj.setDate(startDateObj.getDate() - (DEFAULT_DAYS - 1));
+              const start = formatDate(startDateObj);
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          >
+            最近 7 天
+          </button>
         </div>
       </div>
 
@@ -84,33 +119,33 @@ export function OverviewPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <KpiCard
               title="日活跃用户"
-              value={overviewQuery.data.ga4.dau.current}
-              yesterday={overviewQuery.data.ga4.dau.yesterday}
+              metric={overviewQuery.data.ga4.dau}
+              expectedDate={endDate}
             />
             <KpiCard
               title="会话数"
-              value={overviewQuery.data.ga4.sessions.current}
-              yesterday={overviewQuery.data.ga4.sessions.yesterday}
+              metric={overviewQuery.data.ga4.sessions}
+              expectedDate={endDate}
             />
             <KpiCard
               title="页面浏览量"
-              value={overviewQuery.data.ga4.page_views.current}
-              yesterday={overviewQuery.data.ga4.page_views.yesterday}
+              metric={overviewQuery.data.ga4.page_views}
+              expectedDate={endDate}
             />
             <KpiCard
               title="GSC 展示"
-              value={overviewQuery.data.gsc.impressions.current}
-              yesterday={overviewQuery.data.gsc.impressions.yesterday}
+              metric={overviewQuery.data.gsc.impressions}
+              expectedDate={endDate}
             />
             <KpiCard
               title="GSC 点击"
-              value={overviewQuery.data.gsc.clicks.current}
-              yesterday={overviewQuery.data.gsc.clicks.yesterday}
+              metric={overviewQuery.data.gsc.clicks}
+              expectedDate={endDate}
             />
             <KpiCard
               title="GSC 平均排名"
-              value={overviewQuery.data.gsc.avg_position.current}
-              yesterday={overviewQuery.data.gsc.avg_position.yesterday}
+              metric={overviewQuery.data.gsc.avg_position}
+              expectedDate={endDate}
               invert
             />
           </div>
@@ -135,12 +170,21 @@ export function OverviewPage() {
 
 interface KpiCardProps {
   title: string;
-  value: number | null;
-  yesterday: number | null;
+  metric: MetricWithTrend;
+  expectedDate: string;
   invert?: boolean;
 }
 
-function KpiCard({ title, value, yesterday, invert }: KpiCardProps) {
+function KpiCard({ title, metric, expectedDate, invert }: KpiCardProps) {
+  const lastPoint = [...metric.trend_7d].reverse().find((p) => p.value != null);
+  const secondLastPoint = [...metric.trend_7d]
+    .reverse()
+    .filter((p) => p.value != null)
+    .slice(1, 2)[0];
+
+  const value = lastPoint?.value ?? null;
+  const yesterday = secondLastPoint?.value ?? null;
+
   const delta =
     value != null && yesterday != null && yesterday !== 0
       ? ((value - yesterday) / Math.abs(yesterday)) * 100
@@ -150,7 +194,14 @@ function KpiCard({ title, value, yesterday, invert }: KpiCardProps) {
 
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-      <div className="text-xs text-slate-400 mb-1">{title}</div>
+      <div className="text-xs text-slate-400 mb-1">
+        {title}
+        {lastPoint && lastPoint.date !== expectedDate && (
+          <span className="ml-1 text-[10px] text-slate-500">
+            （数据日期 {lastPoint.date}）
+          </span>
+        )}
+      </div>
       <div className="text-xl font-semibold">
         {value != null ? Math.round(value).toLocaleString("zh-CN") : "-"}
       </div>

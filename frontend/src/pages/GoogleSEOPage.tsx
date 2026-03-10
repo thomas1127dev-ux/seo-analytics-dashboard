@@ -6,6 +6,7 @@ import {
   fetchGoogleSeoQueries,
   fetchGoogleSeoPages
 } from "../api/googleSeo";
+import type { SearchOverviewMetrics } from "../api/overview";
 import {
   Bar,
   BarChart,
@@ -24,14 +25,13 @@ function formatDate(d: Date) {
 
 export function GoogleSEOPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
-
-  const today = useMemo(() => new Date(), []);
-  const startDate = useMemo(() => {
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
     const d = new Date(today);
     d.setDate(d.getDate() - (DEFAULT_DAYS - 1));
     return formatDate(d);
-  }, [today]);
-  const endDate = useMemo(() => formatDate(today), [today]);
+  });
+  const [endDate, setEndDate] = useState(() => formatDate(new Date()));
 
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -95,8 +95,44 @@ export function GoogleSEOPage() {
             </option>
           ))}
         </select>
-        <div className="text-sm text-slate-300">
-          Google SEO（{startDate} ～ {endDate}）
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-300">
+          <span>日期范围：</span>
+          <input
+            type="date"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+            value={startDate}
+            max={endDate}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setStartDate(e.target.value);
+            }}
+          />
+          <span>～</span>
+          <input
+            type="date"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+            value={endDate}
+            min={startDate}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setEndDate(e.target.value);
+            }}
+          />
+          <button
+            className="ml-2 rounded border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800"
+            type="button"
+            onClick={() => {
+              const today = new Date();
+              const end = formatDate(today);
+              const startDateObj = new Date(today);
+              startDateObj.setDate(startDateObj.getDate() - (DEFAULT_DAYS - 1));
+              const start = formatDate(startDateObj);
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          >
+            最近 7 天
+          </button>
         </div>
       </div>
 
@@ -104,32 +140,25 @@ export function GoogleSEOPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <SeoKpi
             title="展示"
-            current={summaryQuery.data.impressions.current}
-            yesterday={summaryQuery.data.impressions.yesterday}
+            metric={summaryQuery.data.impressions}
+            expectedDate={endDate}
           />
           <SeoKpi
             title="点击"
-            current={summaryQuery.data.clicks.current}
-            yesterday={summaryQuery.data.clicks.yesterday}
+            metric={summaryQuery.data.clicks}
+            expectedDate={endDate}
           />
           <SeoKpi
             title="CTR"
-            current={
-              summaryQuery.data.ctr.current != null
-                ? summaryQuery.data.ctr.current * 100
-                : null
-            }
-            yesterday={
-              summaryQuery.data.ctr.yesterday != null
-                ? summaryQuery.data.ctr.yesterday * 100
-                : null
-            }
+            metric={summaryQuery.data.ctr}
+            expectedDate={endDate}
+            transform={(v) => v * 100}
             suffix="%"
           />
           <SeoKpi
             title="平均排名"
-            current={summaryQuery.data.avg_position.current}
-            yesterday={summaryQuery.data.avg_position.yesterday}
+            metric={summaryQuery.data.avg_position}
+            expectedDate={endDate}
             invert
           />
         </div>
@@ -231,19 +260,35 @@ export function GoogleSEOPage() {
 
 interface SeoKpiProps {
   title: string;
-  current: number | null;
-  yesterday: number | null;
+  metric: SearchOverviewMetrics["impressions"];
+  expectedDate: string;
+  transform?: (v: number) => number;
   invert?: boolean;
   suffix?: string;
 }
 
 function SeoKpi({
   title,
-  current,
-  yesterday,
+  metric,
+  expectedDate,
+  transform,
   invert,
   suffix = ""
 }: SeoKpiProps) {
+  const lastPoint = [...metric.trend_7d].reverse().find((p) => p.value != null);
+  const secondLastPoint = [...metric.trend_7d]
+    .reverse()
+    .filter((p) => p.value != null)
+    .slice(1, 2)[0];
+
+  const rawCurrent = lastPoint?.value ?? null;
+  const rawYesterday = secondLastPoint?.value ?? null;
+
+  const current =
+    rawCurrent != null && transform ? transform(rawCurrent) : rawCurrent;
+  const yesterday =
+    rawYesterday != null && transform ? transform(rawYesterday) : rawYesterday;
+
   const delta =
     current != null && yesterday != null && yesterday !== 0
       ? ((current - yesterday) / Math.abs(yesterday)) * 100
@@ -253,7 +298,14 @@ function SeoKpi({
 
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-      <div className="text-xs text-slate-400 mb-1">{title}</div>
+      <div className="text-xs text-slate-400 mb-1">
+        {title}
+        {lastPoint && lastPoint.date !== expectedDate && (
+          <span className="ml-1 text-[10px] text-slate-500">
+            （数据日期 {lastPoint.date}）
+          </span>
+        )}
+      </div>
       <div className="text-lg font-semibold">
         {current != null ? `${current.toFixed(1)}${suffix}` : "-"}
       </div>
