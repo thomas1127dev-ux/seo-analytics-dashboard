@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from logging.config import fileConfig
-
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
@@ -12,10 +10,6 @@ from app import models  # noqa: F401  导入以注册模型到 Base.metadata
 
 # 读取 alembic.ini 的配置
 config = context.config
-
-# 如果 alembic.ini 中配置了日志，这里会生效
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
 
 
 def get_url() -> str:
