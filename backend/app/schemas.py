@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, date
+from typing import Optional, List
 
 from pydantic import BaseModel
 
@@ -23,5 +23,41 @@ class ProjectOut(ProjectBase):
 
     class Config:
         from_attributes = True
+
+
+class DailyPoint(BaseModel):
+    date: date
+    value: Optional[float]
+
+
+class MetricWithTrend(BaseModel):
+    current: Optional[float]
+    yesterday: Optional[float]
+    trend_7d: List[DailyPoint]
+
+
+class Ga4OverviewMetrics(BaseModel):
+    dau: MetricWithTrend
+    sessions: MetricWithTrend
+    page_views: MetricWithTrend
+    avg_engagement_time: MetricWithTrend
+    engagement_rate: MetricWithTrend
+    bounce_rate: MetricWithTrend
+
+
+class SearchOverviewMetrics(BaseModel):
+    impressions: MetricWithTrend
+    clicks: MetricWithTrend
+    ctr: MetricWithTrend
+    avg_position: MetricWithTrend
+
+
+class OverviewResponse(BaseModel):
+    project_id: int
+    start_date: date
+    end_date: date
+    ga4: Ga4OverviewMetrics
+    gsc: SearchOverviewMetrics
+    yandex: SearchOverviewMetrics
 
 
