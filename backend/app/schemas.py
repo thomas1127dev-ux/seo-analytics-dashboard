@@ -61,3 +61,25 @@ class OverviewResponse(BaseModel):
     yandex: SearchOverviewMetrics
 
 
+class TrafficSourceShare(BaseModel):
+    channel: str
+    sessions: float
+    users: float
+    page_views: float
+    ratio: float
+
+
+class TrafficTrendPoint(BaseModel):
+    date: date
+    channel: str
+    sessions: float
+
+
+class TrafficSourcesResponse(BaseModel):
+    project_id: int
+    start_date: date
+    end_date: date
+    sources: list[TrafficSourceShare]
+    trend_7d: list[TrafficTrendPoint]
+
+
