@@ -1,0 +1,21 @@
+[project]
+name = "seo-analytics-dashboard-backend"
+version = "0.1.0"
+description = "Backend service for multi-site SEO analytics dashboard"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.0",
+    "python-dotenv==1.0.1",
+    "SQLAlchemy==2.0.36",
+    "alembic==1.14.0",
+    "mysqlclient==2.2.5",
+    "google-auth==2.37.0",
+    "google-analytics-data==0.18.10",
+    "google-api-python-client==2.154.0",
+    "requests==2.32.3",
+]
+
+[tool.uv]
+dev-dependencies = []
+

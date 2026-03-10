@@ -14,10 +14,17 @@
 ## 快速开始（开发方案落地后）
 
 ```bash
-# 后端 (Python 3.10+)
-cd backend && python -m venv .venv && .venv\Scripts\activate  # Windows
-pip install -r requirements.txt && cp .env.example .env       # 填写 .env
-uvicorn app.main:app --reload --port 4000
+# 后端 (Python 3.10+，使用 uv 管理依赖)
+cd backend
+
+# 安装依赖（第一次）
+uv sync
+
+# 启动开发服务（会自动加载 uv 管理的虚拟环境）
+uv run uvicorn app.main:app --reload --port 4000
+
+# 如需本地环境变量
+cp .env.example .env  # 填写 .env
 
 # 前端（新终端）
 cd frontend && npm install
