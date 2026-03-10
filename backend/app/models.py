@@ -1,16 +1,8 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Date,
-    DateTime,
-    Float,
-    UniqueConstraint,
-)
+from sqlalchemy import Column, Integer, String, Date, DateTime, Float, UniqueConstraint
 
 from .db import Base
 
@@ -83,5 +75,97 @@ class YandexDaily(Base):
     clicks = Column(Integer, nullable=True)
     ctr = Column(Float, nullable=True)
     avg_position = Column(Float, nullable=True)
+
+
+class Ga4ChannelDaily(Base):
+    __tablename__ = "ga4_channel_daily"
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "date", "channel", name="uq_ga4_channel_project_date_channel"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
+    channel = Column(String(64), nullable=False, index=True)
+
+    sessions = Column(Integer, nullable=True)
+    users = Column(Integer, nullable=True)
+    page_views = Column(Integer, nullable=True)
+
+
+class Ga4PageDaily(Base):
+    __tablename__ = "ga4_page_daily"
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "date", "page_path", name="uq_ga4_page_project_date_path"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
+    page_path = Column(String(512), nullable=False, index=True)
+
+    page_views = Column(Integer, nullable=True)
+    avg_engagement_time = Column(Float, nullable=True)
+    bounce_rate = Column(Float, nullable=True)
+
+
+class GscQueryDaily(Base):
+    __tablename__ = "gsc_query_daily"
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "date", "query", name="uq_gsc_query_project_date_query"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
+    query = Column(String(512), nullable=False, index=True)
+
+    impressions = Column(Integer, nullable=True)
+    clicks = Column(Integer, nullable=True)
+    ctr = Column(Float, nullable=True)
+    avg_position = Column(Float, nullable=True)
+
+
+class GscPageDaily(Base):
+    __tablename__ = "gsc_page_daily"
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "date", "page", name="uq_gsc_page_project_date_page"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
+    page = Column(String(512), nullable=False, index=True)
+
+    impressions = Column(Integer, nullable=True)
+    clicks = Column(Integer, nullable=True)
+    ctr = Column(Float, nullable=True)
+    avg_position = Column(Float, nullable=True)
+
+
+class YandexQueryDaily(Base):
+    __tablename__ = "yandex_query_daily"
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "date", "query", name="uq_yandex_query_project_date_query"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
+    query = Column(String(512), nullable=False, index=True)
+
+    impressions = Column(Integer, nullable=True)
+    clicks = Column(Integer, nullable=True)
+    ctr = Column(Float, nullable=True)
 
 
