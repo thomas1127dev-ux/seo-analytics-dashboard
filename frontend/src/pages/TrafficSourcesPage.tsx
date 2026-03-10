@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
-import { fetchTrafficSources, type TrafficSourceShare } from "../api/traffic";
+import { fetchTrafficSources } from "../api/traffic";
 import {
   ResponsiveContainer,
   PieChart,
@@ -114,17 +114,6 @@ export function TrafficSourcesPage() {
                       borderColor: "#1e293b",
                       borderRadius: 8
                     }}
-                    formatter={(_value: number, _name: string, props: { payload?: TrafficSourceShare }) => {
-                      const p = props.payload;
-                      if (!p) return ["—", ""];
-                      const total = trafficQuery.data.sources.reduce((s, x) => s + x.sessions, 0);
-                      const pct = total ? ((p.sessions / total) * 100).toFixed(1) : "0";
-                      return [
-                        `会话 ${p.sessions} · 用户 ${p.users} · PV ${p.page_views}（占比 ${pct}%）`,
-                        p.channel
-                      ];
-                    }}
-                    labelFormatter={(label) => `渠道：${label}`}
                   />
                   <Legend />
                 </PieChart>
