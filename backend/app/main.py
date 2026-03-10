@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+from app.routers import projects
+
 
 def get_frontend_origins() -> list[str]:
     """
@@ -28,6 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+app.include_router(projects.router)
 
 @app.get("/health")
 def health_check():
