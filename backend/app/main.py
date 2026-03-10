@@ -9,6 +9,7 @@ from app.routers import (
     dashboard_traffic,
     dashboard_content,
     dashboard_google_seo,
+    dashboard_yandex_seo,
 )
 
 
@@ -44,6 +45,7 @@ app.include_router(dashboard_overview.router)
 app.include_router(dashboard_traffic.router)
 app.include_router(dashboard_content.router)
 app.include_router(dashboard_google_seo.router)
+app.include_router(dashboard_yandex_seo.router)
 
 @app.get("/health")
 def health_check():
