@@ -284,45 +284,35 @@ def ingest_ga4_page_daily_for_project(
         raise ValueError(f"Project {project.project_key} 未配置 ga4_property_id")
 
     rows = fetch_ga4_page_daily(project.ga4_property_id, target_date)
+
+    # 为保证幂等性，先清空该 project + date 的旧数据，再写入新结果，避免唯一键冲突。
+    (
+        db.query(models.Ga4PageDaily)
+        .filter(
+            models.Ga4PageDaily.project_id == project.id,
+            models.Ga4PageDaily.date == target_date,
+        )
+        .delete(synchronize_session=False)
+    )
+
     if not rows:
+        db.commit()
         return 0
 
-    count = 0
     for item in rows:
         page_path = str(item["page_path"])
 
-        existing: Optional[models.Ga4PageDaily] = (
-            db.query(models.Ga4PageDaily)
-            .filter(
-                models.Ga4PageDaily.project_id == project.id,
-                models.Ga4PageDaily.date == target_date,
-                models.Ga4PageDaily.page_path == page_path,
-            )
-            .first()
+        record = models.Ga4PageDaily(
+            project_id=project.id,
+            date=target_date,
+            page_path=page_path,
+            page_views=int(item["page_views"] or 0),
+            avg_engagement_time=float(item["avg_engagement_time"] or 0.0),
+            bounce_rate=float(item["bounce_rate"] or 0.0),
         )
-
-        payload = {
-            "page_views": int(item["page_views"] or 0),
-            "avg_engagement_time": float(item["avg_engagement_time"] or 0.0),
-            "bounce_rate": float(item["bounce_rate"] or 0.0),
-        }
-
-        if existing:
-            for key, value in payload.items():
-                setattr(existing, key, value)
-            db.add(existing)
-        else:
-            record = models.Ga4PageDaily(
-                project_id=project.id,
-                date=target_date,
-                page_path=page_path,
-                **payload,
-            )
-            db.add(record)
-
-        count += 1
+        db.add(record)
 
     db.commit()
-    return count
+    return len(rows)
 
 
