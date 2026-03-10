@@ -98,3 +98,18 @@ class ContentPerformanceResponse(BaseModel):
     pages: list[ContentPageItem]
 
 
+class SeoItem(BaseModel):
+    key: str  # 关键词或页面
+    clicks: float
+    impressions: float
+    ctr: float
+    avg_position: float
+
+
+class SeoListResponse(BaseModel):
+    project_id: int
+    start_date: date
+    end_date: date
+    items: list[SeoItem]
+
+
