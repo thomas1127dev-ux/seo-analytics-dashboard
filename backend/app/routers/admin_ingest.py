@@ -9,6 +9,7 @@ from app.db import get_db
 from app import models
 from app.services.ga4_service import ingest_ga4_daily_for_project
 from app.services.gsc_service import ingest_gsc_daily_for_project
+from app.services.yandex_service import ingest_yandex_daily_for_project
 
 
 router = APIRouter(prefix="/api/admin/ingest", tags=["admin-ingest"])
@@ -72,6 +73,46 @@ def ingest_gsc_daily(
         record = ingest_gsc_daily_for_project(db, project, target_date)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    return {
+        "project_key": project.project_key,
+        "date": str(target_date),
+        "data": {
+            "impressions": record.impressions,
+            "clicks": record.clicks,
+            "ctr": record.ctr,
+            "avg_position": record.avg_position,
+        },
+    }
+
+
+@router.post("/yandex-daily")
+def ingest_yandex_daily(
+    project_key: str = Query(..., description="项目唯一 key，对应 projects.project_key"),
+    target_date: date = Query(..., description="拉取数据的日期，例如 2026-03-10"),
+    db: Session = Depends(get_db),
+):
+    """
+    无权限版：手动触发某个项目在指定日期的 Yandex 日汇总数据采集。
+    若 Yandex 未配置或返回 RESOURCE_NOT_FOUND，则安全返回无数据说明。
+    """
+    project = (
+        db.query(models.Project)
+        .filter(models.Project.project_key == project_key)
+        .first()
+    )
+    if not project:
+        raise HTTPException(status_code=404, detail="project 不存在")
+
+    record = ingest_yandex_daily_for_project(db, project, target_date)
+    if record is None:
+        # 按需求：RESOURCE_NOT_FOUND 等情况安全忽略，不视为错误
+        return {
+            "project_key": project.project_key,
+            "date": str(target_date),
+            "data": None,
+            "message": "Yandex 暂无可用数据或尚未配置，将安全忽略",
+        }
 
     return {
         "project_key": project.project_key,
