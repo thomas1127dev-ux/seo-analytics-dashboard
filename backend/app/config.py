@@ -1,6 +1,12 @@
 import os
 from functools import lru_cache
-from pydantic import BaseModel, AnyUrl
+
+from dotenv import load_dotenv
+from pydantic import BaseModel
+
+
+# 优先从当前目录或父级加载 .env 文件（用于本地开发）
+load_dotenv()
 
 
 class Settings(BaseModel):
