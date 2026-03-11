@@ -8,19 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app import models, schemas
+from app.auth.dependencies import ensure_project_access
 
 
 router = APIRouter(prefix="/api/dashboard/google-seo", tags=["dashboard-google-seo"])
-
-
-def _ensure_project(db: Session, project_id: int) -> None:
-    exists = (
-        db.query(models.Project.id)
-        .filter(models.Project.id == project_id, models.Project.status == "active")
-        .first()
-    )
-    if not exists:
-        raise HTTPException(status_code=404, detail="project 不存在或已停用")
 
 
 @router.get("/summary", response_model=schemas.SearchOverviewMetrics)
@@ -29,6 +20,7 @@ def get_google_seo_summary(
     start_date: date = Query(..., description="开始日期"),
     end_date: date = Query(..., description="结束日期"),
     db: Session = Depends(get_db),
+    project: models.Project = Depends(ensure_project_access),
 ):
     """
     Google SEO 汇总指标（展示、点击、CTR、平均排名 + 趋势）。
@@ -36,8 +28,6 @@ def get_google_seo_summary(
     """
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 不能晚于 end_date")
-
-    _ensure_project(db, project_id)
 
     rows = (
         db.query(
@@ -85,14 +75,13 @@ def get_google_seo_queries(
     end_date: date = Query(..., description="结束日期"),
     limit: int = Query(100, ge=1, le=500, description="返回 Top N 关键词"),
     db: Session = Depends(get_db),
+    project: models.Project = Depends(ensure_project_access),
 ):
     """
     Google SEO 关键词排行。
     """
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 不能晚于 end_date")
-
-    _ensure_project(db, project_id)
 
     rows = (
         db.query(
@@ -143,14 +132,13 @@ def get_google_seo_pages(
     end_date: date = Query(..., description="结束日期"),
     limit: int = Query(100, ge=1, le=500, description="返回 Top N 页面"),
     db: Session = Depends(get_db),
+    project: models.Project = Depends(ensure_project_access),
 ):
     """
     Google SEO 页面排行。
     """
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 不能晚于 end_date")
-
-    _ensure_project(db, project_id)
 
     rows = (
         db.query(
