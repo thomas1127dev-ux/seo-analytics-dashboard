@@ -165,13 +165,25 @@ npm run dev
 - **运维部署教程**：[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
 - **OpenClaw Skill 方案**：[docs/OPENCLAW_SKILL.md](docs/OPENCLAW_SKILL.md)
 
-快速步骤：
+快速步骤（从一台“空白”机器开始）：
 
-1. 复制 `deploy/.env.example` 为 `deploy/.env` 并填写（数据库、JWT、端口等）。
-2. 在 `deploy` 目录执行：`bash scripts/deploy.sh`，或使用 `docker compose up -d --build`。
-3. 访问前端地址（默认 `http://localhost:5173`）并登录。
+1. 在目标机器上安装 Docker / docker compose。
+2. 运行引导脚本（示例）：
 
-OpenClaw 可通过 `deploy/scripts/openclaw_skill.py` 调用 `deploy` / `upgrade` / `status` 子命令，输出为 JSON，便于自动化集成。
+   ```bash
+   # 将 <GITHUB_URL> 替换为实际公共仓库地址
+   curl -fsSL <GITHUB_URL>/bootstrap.sh | bash
+   ```
+
+   引导脚本将完成：
+
+   - 从 GitHub 克隆本仓库到本地；
+   - 进入 `deploy` 目录；
+   - 按需创建 `deploy/.env` 并调用 `scripts/deploy.sh`，完成容器构建、启动与数据库迁移。
+
+3. 根据终端输出提示访问前端地址（默认 `http://localhost:5173`）并登录。
+
+在自动化场景下，OpenClaw 也可以直接通过 `deploy/scripts/openclaw_skill.py` 调用 `deploy` / `upgrade` / `status` 子命令，输出为 JSON，便于集成。
 
 ---
 
