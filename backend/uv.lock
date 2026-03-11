@@ -1213,9 +1213,6 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = "==0.30.0" },
 ]
 
-[package.metadata.requires-dev]
-dev = []
-
 [[package]]
 name = "six"
 version = "1.17.0"
