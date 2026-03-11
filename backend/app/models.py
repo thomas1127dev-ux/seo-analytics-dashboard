@@ -2,7 +2,18 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Date, DateTime, Float, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Date,
+    DateTime,
+    Float,
+    UniqueConstraint,
+    Boolean,
+    ForeignKey,
+)
+from sqlalchemy.orm import relationship
 
 from .db import Base
 
@@ -25,6 +36,83 @@ class Project(Base):
     updated_at = Column(
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    is_admin = Column(Boolean, nullable=False, default=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    created_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow
+    )
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class Department(Base):
+    __tablename__ = "departments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), unique=True, nullable=False)
+
+
+class Group(Base):
+    __tablename__ = "groups"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
+    name = Column(String(255), nullable=False)
+
+    department = relationship("Department")
+
+
+class UserDepartment(Base):
+    __tablename__ = "user_departments"
+    __table_args__ = (
+        UniqueConstraint("user_id", "department_id", name="uq_user_department"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
+
+    user = relationship("User")
+    department = relationship("Department")
+
+
+class UserGroup(Base):
+    __tablename__ = "user_groups"
+    __table_args__ = (
+        UniqueConstraint("user_id", "group_id", name="uq_user_group"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+
+    user = relationship("User")
+    group = relationship("Group")
+
+
+class UserProjectPermission(Base):
+    __tablename__ = "user_project_permissions"
+    __table_args__ = (
+        UniqueConstraint("user_id", "project_id", name="uq_user_project_permission"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+
+    user = relationship("User")
+    project = relationship("Project")
 
 
 class Ga4Daily(Base):
