@@ -31,9 +31,22 @@ fi
 echo "[info] 启动 / 更新容器……"
 if docker compose version >/dev/null 2>&1; then
   docker compose up -d --build
+  COMPOSE_CMD="docker compose"
 else
   docker-compose up -d --build
+  COMPOSE_CMD="docker-compose"
 fi
 
-echo "[info] 容器已启动，后端健康检查请访问: http://localhost:${BACKEND_PORT:-4000}/health"
+echo "[info] 等待后端就绪……"
+sleep 5
+
+echo "[info] 执行数据库迁移……"
+if $COMPOSE_CMD exec -T backend uv run alembic upgrade head 2>/dev/null; then
+  echo "[info] 数据库迁移完成。"
+else
+  echo "[warn] 迁移执行失败或后端尚未就绪，请稍后手动执行: docker compose exec backend uv run alembic upgrade head"
+fi
+
+echo "[info] 部署完成。后端健康检查: http://localhost:${BACKEND_PORT:-4000}/health"
+echo "[info] 前端访问: http://localhost:${FRONTEND_PORT:-5173}"
 

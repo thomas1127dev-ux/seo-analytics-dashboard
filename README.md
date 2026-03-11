@@ -158,6 +158,23 @@ npm run dev
 
 ---
 
+## 容器化部署（运维 / OpenClaw）
+
+面向运维的一键部署与 OpenClaw Skill 封装说明见：
+
+- **运维部署教程**：[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
+- **OpenClaw Skill 方案**：[docs/OPENCLAW_SKILL.md](docs/OPENCLAW_SKILL.md)
+
+快速步骤：
+
+1. 复制 `deploy/.env.example` 为 `deploy/.env` 并填写（数据库、JWT、端口等）。
+2. 在 `deploy` 目录执行：`bash scripts/deploy.sh`，或使用 `docker compose up -d --build`。
+3. 访问前端地址（默认 `http://localhost:5173`）并登录。
+
+OpenClaw 可通过 `deploy/scripts/openclaw_skill.py` 调用 `deploy` / `upgrade` / `status` 子命令，输出为 JSON，便于自动化集成。
+
+---
+
 ## 认证与权限管理
 
 - **登录方式**：前端通过 `/login` 页面发起账号密码登录，后端接口：

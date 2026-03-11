@@ -4,6 +4,7 @@ bold-syntax-384108-da6937288337.json
 
 backend/.env
 backend/.venv
+deploy/.env
 __pycache__
 
 node_modules
