@@ -5,7 +5,6 @@ bold-syntax-384108-da6937288337.json
 backend/.env
 backend/.venv
 __pycache__
-backend/alembic/versions
 
 node_modules
 frontend/package-lock.json
