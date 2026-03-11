@@ -83,6 +83,9 @@ seo-analytics-dashboard/
 | `PORT` | 服务端口，默认 4000 |
 | `FRONTEND_ORIGIN` | 允许的 CORS 来源，多个用逗号分隔 |
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | MySQL 连接信息 |
+| `JWT_SECRET_KEY` | JWT 签名用密钥，**生产环境必须覆盖默认值**，建议使用随机长字符串 |
+| `JWT_ALGORITHM` | JWT 算法，默认 `HS256` |
+| `ACCESS_TOKEN_EXPIRES_MINUTES` | 访问令牌过期时间（分钟），默认 `60` |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` 或 `GOOGLE_APPLICATION_CREDENTIALS` | Google 服务账号（JSON 字符串或本地 JSON 文件路径） |
 
 ### 前端（`frontend/.env`，可选）
@@ -95,9 +98,10 @@ seo-analytics-dashboard/
 
 ## 快速开始
 
-### 1. 数据库
+### 1. 数据库与迁移
 
-创建 MySQL 数据库（名称与 `DB_NAME` 一致），然后执行迁移：
+1. 创建 MySQL 数据库（名称与 `DB_NAME` 一致，例如 `seo_analytics_dashboard`）。
+2. 在 `backend` 目录安装依赖并执行 Alembic 迁移：
 
 ```bash
 cd backend
@@ -105,16 +109,44 @@ uv sync
 uv run alembic upgrade head
 ```
 
-### 2. 后端
+### 2. 初始化管理员用户（示例）
+
+> 下面示例仅用于本地开发/测试，请根据公司账号体系调整。
+
+1. 在 Python REPL 中生成密码哈希（示例密码为 `Admin123!`）：
 
 ```bash
+cd backend
+uv run python
+```
+
+```python
+from app.auth.security import hash_password
+print(hash_password("Admin123!"))
+```
+
+2. 在 MySQL 中插入一条管理员用户记录，并根据需要授权项目（假设项目 `id=1`）：
+
+```sql
+INSERT INTO users (email, name, password_hash, is_admin, is_active, created_at, updated_at)
+VALUES ('admin@example.com', 'Admin', '<上一步生成的哈希>', 1, 1, NOW(), NOW());
+
+-- 可选：为普通用户单独授权项目时使用
+INSERT INTO user_project_permissions (user_id, project_id)
+VALUES (1, 1);
+```
+
+### 3. 后端
+
+```bash
+cd backend
 uv run uvicorn app.main:app --port 4000
 ```
 
 - 健康检查：`GET http://localhost:4000/health`
 - API 文档：`http://localhost:4000/docs`
 
-### 3. 前端
+### 4. 前端
 
 ```bash
 cd frontend
@@ -125,6 +157,27 @@ npm run dev
 浏览器访问 `http://localhost:5173`（或终端提示的地址）。若需通过 ngrok 等公网域名访问，请将前端的 `VITE_API_BASE_URL` 指向后端公网地址，并在后端 `FRONTEND_ORIGIN` 中加入该前端域名，避免 CORS 与“公网访问 localhost”被浏览器拦截。
 
 ---
+
+## 认证与权限管理
+
+- **登录方式**：前端通过 `/login` 页面发起账号密码登录，后端接口：
+  - `POST /api/auth/login`：表单字段 `username`（邮箱）、`password`，返回 `access_token`。
+  - `GET /api/auth/me`：在 `Authorization: Bearer <token>` 下返回当前用户信息。
+- **权限模型（核心表）**：
+  - `users`：用户账号，包含 `email`、`name`、`password_hash`、`is_admin`、`is_active`。
+  - `departments` / `groups`：部门与小组（当前实现以 `user_project_permissions` 为主，部门/小组用于后续扩展）。
+  - `user_project_permissions`：用户与项目之间的授权关系。
+- **项目与数据访问规则**：
+  - 所有看板接口必须携带 `project_id`，后端会：
+    - 校验项目是否存在且 `status = active`；
+    - 校验当前用户是否对该 `project_id` 拥有访问权限。
+  - `/api/projects` 会根据当前用户返回可见项目列表：
+    - 管理员：返回所有 `active` 项目；
+    - 普通用户：仅返回 `user_project_permissions` 中授权的项目。
+- **前端行为**：
+  - 未登录访问受保护路由（如 `/overview`）会被重定向到 `/login`。
+  - 登录成功后，Token 会存储在 `localStorage` 并自动附加到后续 API 请求头。
+  - 顶部右侧提供“退出登录”按钮，清空本地会话并返回登录页。
 
 ## API 概览
 
