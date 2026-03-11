@@ -177,6 +177,100 @@ def cmd_group_add(_args: argparse.Namespace) -> None:
     db.close()
 
 
+def cmd_user_assign_department(_args: argparse.Namespace) -> None:
+  print("=== 将用户加入部门 ===")
+  db = get_db()
+  try:
+    users = db.query(models.User).order_by(models.User.id.asc()).all()
+    deps = db.query(models.Department).order_by(models.Department.id.asc()).all()
+    if not users or not deps:
+      print("需要至少一个用户和一个部门。")
+      return
+    print("用户列表：")
+    for u in users:
+      print(f"{u.id}\t{u.email}\t{'管理员' if u.is_admin else ''}")
+    user_id = int(prompt("请输入用户 ID"))
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+      print("用户不存在。")
+      return
+    print("部门列表：")
+    for d in deps:
+      print(f"{d.id}\t{d.name}")
+    dep_id = int(prompt("请输入部门 ID"))
+    dep = db.query(models.Department).filter(models.Department.id == dep_id).first()
+    if not dep:
+      print("部门不存在。")
+      return
+    exists = (
+      db.query(models.UserDepartment)
+      .filter(
+        models.UserDepartment.user_id == user.id,
+        models.UserDepartment.department_id == dep.id,
+      )
+      .first()
+    )
+    if exists:
+      print("该用户已在该部门中。")
+      return
+    link = models.UserDepartment(user_id=user.id, department_id=dep.id)
+    db.add(link)
+    db.commit()
+    print(f"已将用户 {user.email} 加入部门 {dep.name}。")
+  finally:
+    db.close()
+
+
+def cmd_user_assign_group(_args: argparse.Namespace) -> None:
+  print("=== 将用户加入小组 ===")
+  db = get_db()
+  try:
+    users = db.query(models.User).order_by(models.User.id.asc()).all()
+    groups = (
+      db.query(models.Group)
+      .join(models.Department, models.Group.department_id == models.Department.id)
+      .order_by(models.Group.id.asc())
+      .all()
+    )
+    if not users or not groups:
+      print("需要至少一个用户和一个小组。")
+      return
+    print("用户列表：")
+    for u in users:
+      print(f"{u.id}\t{u.email}\t{'管理员' if u.is_admin else ''}")
+    user_id = int(prompt("请输入用户 ID"))
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+      print("用户不存在。")
+      return
+    print("小组列表：")
+    for g in groups:
+      # g.department 可能未配置 relationship 名称，这里仅展示 group id/name
+      print(f"{g.id}\t{g.name}")
+    group_id = int(prompt("请输入小组 ID"))
+    group = db.query(models.Group).filter(models.Group.id == group_id).first()
+    if not group:
+      print("小组不存在。")
+      return
+    exists = (
+      db.query(models.UserGroup)
+      .filter(
+        models.UserGroup.user_id == user.id,
+        models.UserGroup.group_id == group.id,
+      )
+      .first()
+    )
+    if exists:
+      print("该用户已在该小组中。")
+      return
+    link = models.UserGroup(user_id=user.id, group_id=group.id)
+    db.add(link)
+    db.commit()
+    print(f"已将用户 {user.email} 加入小组 {group.name}。")
+  finally:
+    db.close()
+
+
 # 项目与权限
 
 
@@ -368,6 +462,9 @@ def build_parser() -> argparse.ArgumentParser:
   grp_parser = subparsers.add_parser("group", help="小组相关操作")
   grp_sub = grp_parser.add_subparsers(dest="sub", required=True)
   grp_sub.add_parser("add", help="在部门下创建小组").set_defaults(func=cmd_group_add)
+  grp_sub.add_parser("assign-user", help="将用户加入小组").set_defaults(
+    func=cmd_user_assign_group
+  )
 
   # project / auth
   proj_parser = subparsers.add_parser("project", help="项目（站点）相关操作")
@@ -406,12 +503,14 @@ def interactive_main() -> None:
         ("📋 查看用户列表", lambda: cmd_user_list(argparse.Namespace())),
         ("🏢 创建部门", lambda: cmd_department_add(argparse.Namespace())),
         ("👥 在部门下创建小组", lambda: cmd_group_add(argparse.Namespace())),
+        ("🔗 将用户加入部门", lambda: cmd_user_assign_department(argparse.Namespace())),
+        ("🔗 将用户加入小组", lambda: cmd_user_assign_group(argparse.Namespace())),
       ],
     ),
     (
       "📂 项目与权限管理",
       [
-        ("🛰 注册项目（站点）", lambda: cmd_project_add(argparse.Namespace())),
+        ("📌 注册项目（站点）", lambda: cmd_project_add(argparse.Namespace())),
         ("🔑 为用户授权项目访问", lambda: cmd_auth_grant_project(argparse.Namespace())),
       ],
     ),
