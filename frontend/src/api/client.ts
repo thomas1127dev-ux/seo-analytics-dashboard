@@ -7,3 +7,14 @@ export const apiClient = axios.create({
   timeout: 15000
 });
 
+/**
+ * 设置全局认证 Token，供后续请求使用。
+ */
+export function setAuthToken(token: string | null) {
+  if (token) {
+    apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    delete apiClient.defaults.headers.common.Authorization;
+  }
+}
+
