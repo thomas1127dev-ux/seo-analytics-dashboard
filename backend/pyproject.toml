@@ -23,4 +23,5 @@ dependencies = [
 
 [tool.uv]
 dev-dependencies = []
+scripts = { api = "uvicorn app.main:app --host 0.0.0.0 --port 4000", cli = "python -m app.manage" }
 
