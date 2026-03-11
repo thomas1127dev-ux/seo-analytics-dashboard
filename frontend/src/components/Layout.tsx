@@ -1,5 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
+import { useAuth } from "../auth/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,10 +15,13 @@ const tabs = [
 ];
 
 export function Layout({ children }: LayoutProps) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-6">
-        <header className="mb-4 flex items-center justify-between">
+        <header className="mb-4 flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
               多站点 SEO 数据看板
@@ -26,8 +30,23 @@ export function Layout({ children }: LayoutProps) {
               聚合 GA4 / GSC / Yandex 的跨站点流量与搜索表现
             </p>
           </div>
-          <div className="hidden text-xs text-slate-500 md:block">
-            数据更新依赖各平台同步进度
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            {user && (
+              <span className="hidden md:inline">
+                已登录：{user.name}（{user.email}
+                {user.is_admin ? "，管理员" : ""}）
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigate("/login", { replace: true });
+              }}
+              className="rounded-full border border-slate-700 px-3 py-1 text-[11px] text-slate-200 hover:border-emerald-400/70 hover:bg-slate-900/80"
+            >
+              退出登录
+            </button>
           </div>
         </header>
         <nav className="mb-6 flex gap-2 rounded-full bg-slate-900/60 p-1 text-sm shadow-lg shadow-black/40 ring-1 ring-slate-800/80">
@@ -54,4 +73,5 @@ export function Layout({ children }: LayoutProps) {
     </div>
   );
 }
+
 
