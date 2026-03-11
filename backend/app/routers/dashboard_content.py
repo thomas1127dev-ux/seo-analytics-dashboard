@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app import models, schemas
+from app.auth.dependencies import ensure_project_access
 
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard-content"])
@@ -20,6 +21,7 @@ def get_content_performance(
     end_date: date = Query(..., description="结束日期"),
     limit: int = Query(20, description="返回 Top N 页面", ge=1, le=100),
     db: Session = Depends(get_db),
+    project: models.Project = Depends(ensure_project_access),
 ):
     """
     内容表现页接口。
@@ -28,14 +30,6 @@ def get_content_performance(
     """
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 不能晚于 end_date")
-
-    project_exists = (
-        db.query(models.Project.id)
-        .filter(models.Project.id == project_id, models.Project.status == "active")
-        .first()
-    )
-    if not project_exists:
-        raise HTTPException(status_code=404, detail="project 不存在或已停用")
 
     days = (end_date - start_date).days + 1
     prev_end_date = start_date - timedelta(days=1)

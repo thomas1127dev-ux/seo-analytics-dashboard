@@ -17,6 +17,16 @@ class Settings(BaseModel):
     port: int = int(os.getenv("PORT", "4000"))
     frontend_origin: str = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 
+    # 安全 / 认证
+    jwt_secret_key: str = os.getenv(
+        "JWT_SECRET_KEY",
+        "CHANGE_ME_TO_A_SECURE_RANDOM_STRING",
+    )
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    access_token_expires_minutes: int = int(
+        os.getenv("ACCESS_TOKEN_EXPIRES_MINUTES", "60")
+    )
+
     # 数据库（MySQL）
     db_host: str = os.getenv("DB_HOST", "127.0.0.1")
     db_port: int = int(os.getenv("DB_PORT", "3306"))

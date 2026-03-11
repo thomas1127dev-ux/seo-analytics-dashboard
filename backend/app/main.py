@@ -10,6 +10,7 @@ from app.routers import (
     dashboard_content,
     dashboard_google_seo,
     dashboard_yandex_seo,
+    auth,
 )
 
 
@@ -40,6 +41,7 @@ app.add_middleware(
 
 
 app.include_router(projects.router)
+app.include_router(auth.router)
 app.include_router(admin_ingest.router)
 app.include_router(dashboard_overview.router)
 app.include_router(dashboard_traffic.router)
