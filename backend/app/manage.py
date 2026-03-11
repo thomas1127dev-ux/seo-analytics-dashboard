@@ -394,8 +394,149 @@ def build_parser() -> argparse.ArgumentParser:
 
   return parser
 
+def interactive_main() -> None:
+  """
+  友好的总交互入口：不带任何参数运行时，提供上下移动、回车确认、可返回上级菜单的 TUI。
+  """
+  try:
+    import curses
+  except ImportError:
+    # 回退到简单文本菜单
+    print("当前环境不支持 curses，将使用简化版文本菜单。")
+    print("提示：可通过 'uv run python -m app.manage user add-admin' 等子命令直接调用。")
+    return
+
+  menu_structure: list[tuple[str, list[tuple[str, str, callable | None]]]] = [
+    (
+      "用户与组织管理",
+      [
+        ("创建管理员账号", "user_add_admin", lambda: cmd_user_add_admin(argparse.Namespace())),
+        ("创建普通用户", "user_add", lambda: cmd_user_add(argparse.Namespace())),
+        ("查看用户列表", "user_list", lambda: cmd_user_list(argparse.Namespace())),
+        ("创建部门", "department_add", lambda: cmd_department_add(argparse.Namespace())),
+        ("在部门下创建小组", "group_add", lambda: cmd_group_add(argparse.Namespace())),
+      ],
+    ),
+    (
+      "项目与权限管理",
+      [
+        ("注册项目（站点）", "project_add", lambda: cmd_project_add(argparse.Namespace())),
+        ("为用户授权项目访问", "auth_grant_project", lambda: cmd_auth_grant_project(argparse.Namespace())),
+      ],
+    ),
+    (
+      "批量数据拉取",
+      [
+        ("按日期区间拉取 GA4 数据", "ingest_ga4", lambda: cmd_ingest_ga4_range(argparse.Namespace())),
+        ("按日期区间拉取 GSC 数据", "ingest_gsc", lambda: cmd_ingest_gsc_range(argparse.Namespace())),
+        ("按日期区间拉取 Yandex 数据", "ingest_yandex", lambda: cmd_ingest_yandex_range(argparse.Namespace())),
+      ],
+    ),
+  ]
+
+  def run_action(action: callable | None) -> None:
+    if not action:
+      return
+    try:
+      action()
+    except KeyboardInterrupt:
+      print("\n操作已中断，已返回菜单。")
+    except Exception as exc:  # noqa: BLE001
+      print(f"\n执行过程中发生错误: {exc}")
+
+  def curses_main(stdscr: "curses._CursesWindow") -> None:  # type: ignore[name-defined]
+    curses.curs_set(0)
+    stdscr.nodelay(False)
+    stdscr.keypad(True)
+
+    current_level = "root"
+    root_index = 0
+    sub_index = 0
+
+    while True:
+      stdscr.clear()
+      height, width = stdscr.getmaxyx()
+
+      if current_level == "root":
+        title = "SEO 看板管理 - 主菜单（↑↓ 移动，Enter 进入子菜单，q 退出）"
+        stdscr.addstr(0, 0, title[: width - 1])
+        for i, (label, _) in enumerate(menu_structure):
+          prefix = "➤ " if i == root_index else "  "
+          line = f"{prefix}{label}"
+          if i == root_index:
+            stdscr.attron(curses.A_REVERSE)
+            stdscr.addstr(2 + i, 2, line[: width - 4])
+            stdscr.attroff(curses.A_REVERSE)
+          else:
+            stdscr.addstr(2 + i, 2, line[: width - 4])
+      else:
+        section_label, actions = menu_structure[root_index]
+        title = f"SEO 看板管理 - {section_label}（↑↓ 移动，Enter 执行，b 返回上级，q 退出）"
+        stdscr.addstr(0, 0, title[: width - 1])
+        for i, (label, _, _) in enumerate(actions):
+          prefix = "➤ " if i == sub_index else "  "
+          line = f"{prefix}{label}"
+          if i == sub_index:
+            stdscr.attron(curses.A_REVERSE)
+            stdscr.addstr(2 + i, 2, line[: width - 4])
+            stdscr.attroff(curses.A_REVERSE)
+          else:
+            stdscr.addstr(2 + i, 2, line[: width - 4])
+
+      stdscr.refresh()
+      key = stdscr.getch()
+
+      if key in (ord("q"), ord("Q")):
+        break
+
+      if current_level == "root":
+        if key in (curses.KEY_UP, ord("k")):
+          root_index = (root_index - 1) % len(menu_structure)
+        elif key in (curses.KEY_DOWN, ord("j")):
+          root_index = (root_index + 1) % len(menu_structure)
+        elif key in (curses.KEY_ENTER, 10, 13):
+          current_level = "sub"
+          sub_index = 0
+      else:
+        _, actions = menu_structure[root_index]
+        if key in (curses.KEY_UP, ord("k")):
+          sub_index = (sub_index - 1) % len(actions)
+        elif key in (curses.KEY_DOWN, ord("j")):
+          sub_index = (sub_index + 1) % len(actions)
+        elif key in (ord("b"), ord("B")):
+          current_level = "root"
+        elif key in (curses.KEY_ENTER, 10, 13):
+          _, _, action = actions[sub_index]
+          curses.endwin()
+          run_action(action)
+          stdscr = curses.initscr()
+          curses.curs_set(0)
+          stdscr.nodelay(False)
+          stdscr.keypad(True)
+
+  try:
+    import curses
+
+    curses.wrapper(curses_main)
+    print("已退出管理菜单。")
+  except KeyboardInterrupt:
+    print("\n已退出管理菜单。")
+  except Exception as exc:  # noqa: BLE001
+    print(f"无法启用高级交互菜单（{exc}），请使用命令行子命令方式运行，例如：")
+    print("  uv run python -m app.manage user add-admin")
+
 
 def main() -> None:
+  # 不带参数时，进入菜单式交互入口，方便运维使用
+  import sys
+
+  if len(sys.argv) == 1:
+    try:
+      interactive_main()
+    except KeyboardInterrupt:
+      print("\n已退出管理菜单。")
+    return
+
   parser = build_parser()
   args = parser.parse_args()
   func = getattr(args, "func", None)
