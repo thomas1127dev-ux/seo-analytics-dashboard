@@ -1,0 +1,26 @@
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./frontend/
+WORKDIR /app/frontend
+
+RUN npm ci
+
+COPY frontend /app/frontend
+
+# 构建时可通过环境变量注入 API 基址
+ARG VITE_API_BASE_URL=http://localhost:4000
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+RUN npm run build
+
+FROM nginx:1.27-alpine AS runtime
+
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
+
+# 简单的静态资源服务，必要时可替换为自定义 nginx.conf
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
