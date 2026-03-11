@@ -23,6 +23,7 @@ from datetime import date, timedelta
 
 import requests
 from sqlalchemy.orm import Session
+import questionary
 
 from app.db import SessionLocal
 from app import models
@@ -395,41 +396,31 @@ def build_parser() -> argparse.ArgumentParser:
   return parser
 
 def interactive_main() -> None:
-  """
-  友好的总交互入口：不带任何参数运行时，提供上下移动、回车确认、可返回上级菜单的 TUI。
-  """
-  try:
-    import curses
-  except ImportError:
-    # 回退到简单文本菜单
-    print("当前环境不支持 curses，将使用简化版文本菜单。")
-    print("提示：可通过 'uv run python -m app.manage user add-admin' 等子命令直接调用。")
-    return
-
-  menu_structure: list[tuple[str, list[tuple[str, str, callable | None]]]] = [
+  """友好的总交互入口：不带任何参数运行时，提供上下移动、回车确认、可返回上级菜单的 TUI。"""
+  menu_structure: list[tuple[str, list[tuple[str, callable | None]]]] = [
     (
-      "用户与组织管理",
+      "👤 用户与组织管理",
       [
-        ("创建管理员账号", "user_add_admin", lambda: cmd_user_add_admin(argparse.Namespace())),
-        ("创建普通用户", "user_add", lambda: cmd_user_add(argparse.Namespace())),
-        ("查看用户列表", "user_list", lambda: cmd_user_list(argparse.Namespace())),
-        ("创建部门", "department_add", lambda: cmd_department_add(argparse.Namespace())),
-        ("在部门下创建小组", "group_add", lambda: cmd_group_add(argparse.Namespace())),
+        ("⭐ 创建管理员账号", lambda: cmd_user_add_admin(argparse.Namespace())),
+        ("➕ 创建普通用户", lambda: cmd_user_add(argparse.Namespace())),
+        ("📋 查看用户列表", lambda: cmd_user_list(argparse.Namespace())),
+        ("🏢 创建部门", lambda: cmd_department_add(argparse.Namespace())),
+        ("👥 在部门下创建小组", lambda: cmd_group_add(argparse.Namespace())),
       ],
     ),
     (
-      "项目与权限管理",
+      "📂 项目与权限管理",
       [
-        ("注册项目（站点）", "project_add", lambda: cmd_project_add(argparse.Namespace())),
-        ("为用户授权项目访问", "auth_grant_project", lambda: cmd_auth_grant_project(argparse.Namespace())),
+        ("🛰 注册项目（站点）", lambda: cmd_project_add(argparse.Namespace())),
+        ("🔑 为用户授权项目访问", lambda: cmd_auth_grant_project(argparse.Namespace())),
       ],
     ),
     (
-      "批量数据拉取",
+      "📈 批量数据拉取",
       [
-        ("按日期区间拉取 GA4 数据", "ingest_ga4", lambda: cmd_ingest_ga4_range(argparse.Namespace())),
-        ("按日期区间拉取 GSC 数据", "ingest_gsc", lambda: cmd_ingest_gsc_range(argparse.Namespace())),
-        ("按日期区间拉取 Yandex 数据", "ingest_yandex", lambda: cmd_ingest_yandex_range(argparse.Namespace())),
+        ("🔵 按日期区间拉取 GA4 数据", lambda: cmd_ingest_ga4_range(argparse.Namespace())),
+        ("🟢 按日期区间拉取 GSC 数据", lambda: cmd_ingest_gsc_range(argparse.Namespace())),
+        ("🟣 按日期区间拉取 Yandex 数据", lambda: cmd_ingest_yandex_range(argparse.Namespace())),
       ],
     ),
   ]
@@ -444,86 +435,57 @@ def interactive_main() -> None:
     except Exception as exc:  # noqa: BLE001
       print(f"\n执行过程中发生错误: {exc}")
 
-  def curses_main(stdscr: "curses._CursesWindow") -> None:  # type: ignore[name-defined]
-    curses.curs_set(0)
-    stdscr.nodelay(False)
-    stdscr.keypad(True)
+  while True:
+    logo = (
+      "╔════════════════════════════════════════════╗\n"
+      "║        ★ 多站点 SEO 数据看板管理 ★         ║\n"
+      "╚════════════════════════════════════════════╝"
+    )
 
-    current_level = "root"
-    root_index = 0
-    sub_index = 0
+    # 先打印“Logo”边框，使其不被 questionary 自带的前缀符号打断
+    print(logo)
 
-    while True:
-      stdscr.clear()
-      height, width = stdscr.getmaxyx()
+    # 选择一级菜单（questionary 会在下一行以 “? ” 开头显示提示，不再破坏边框）
+    root_choice = questionary.select(
+      "【主菜单】请选择要操作的功能模块（↑↓ 移动，Enter 确认，Esc 取消）：",
+      choices=[
+        questionary.Choice(menu_structure[0][0], value="sec_0"),
+        questionary.Choice(menu_structure[1][0], value="sec_1"),
+        questionary.Choice(menu_structure[2][0], value="sec_2"),
+        questionary.Choice("❌ 退出管理菜单", value="quit"),
+      ],
+    ).ask()
 
-      if current_level == "root":
-        title = "SEO 看板管理 - 主菜单（↑↓ 移动，Enter 进入子菜单，q 退出）"
-        stdscr.addstr(0, 0, title[: width - 1])
-        for i, (label, _) in enumerate(menu_structure):
-          prefix = "➤ " if i == root_index else "  "
-          line = f"{prefix}{label}"
-          if i == root_index:
-            stdscr.attron(curses.A_REVERSE)
-            stdscr.addstr(2 + i, 2, line[: width - 4])
-            stdscr.attroff(curses.A_REVERSE)
-          else:
-            stdscr.addstr(2 + i, 2, line[: width - 4])
-      else:
-        section_label, actions = menu_structure[root_index]
-        title = f"SEO 看板管理 - {section_label}（↑↓ 移动，Enter 执行，b 返回上级，q 退出）"
-        stdscr.addstr(0, 0, title[: width - 1])
-        for i, (label, _, _) in enumerate(actions):
-          prefix = "➤ " if i == sub_index else "  "
-          line = f"{prefix}{label}"
-          if i == sub_index:
-            stdscr.attron(curses.A_REVERSE)
-            stdscr.addstr(2 + i, 2, line[: width - 4])
-            stdscr.attroff(curses.A_REVERSE)
-          else:
-            stdscr.addstr(2 + i, 2, line[: width - 4])
+    if root_choice is None or root_choice == "quit":
+      print("已退出管理菜单。")
+      return
 
-      stdscr.refresh()
-      key = stdscr.getch()
+    section_index = int(root_choice.split("_")[1])
+    section_label, actions = menu_structure[section_index]
 
-      if key in (ord("q"), ord("Q")):
-        break
+    # 选择子菜单
+    print(logo)
+    sub_choices = [
+      questionary.Choice(label, value=str(i))
+      for i, (label, _action) in enumerate(actions)
+    ]
+    sub_choices.append(questionary.Choice("🔙 返回上级菜单", value="back"))
+    sub_choices.append(questionary.Choice("❌ 退出管理菜单", value="quit"))
 
-      if current_level == "root":
-        if key in (curses.KEY_UP, ord("k")):
-          root_index = (root_index - 1) % len(menu_structure)
-        elif key in (curses.KEY_DOWN, ord("j")):
-          root_index = (root_index + 1) % len(menu_structure)
-        elif key in (curses.KEY_ENTER, 10, 13):
-          current_level = "sub"
-          sub_index = 0
-      else:
-        _, actions = menu_structure[root_index]
-        if key in (curses.KEY_UP, ord("k")):
-          sub_index = (sub_index - 1) % len(actions)
-        elif key in (curses.KEY_DOWN, ord("j")):
-          sub_index = (sub_index + 1) % len(actions)
-        elif key in (ord("b"), ord("B")):
-          current_level = "root"
-        elif key in (curses.KEY_ENTER, 10, 13):
-          _, _, action = actions[sub_index]
-          curses.endwin()
-          run_action(action)
-          stdscr = curses.initscr()
-          curses.curs_set(0)
-          stdscr.nodelay(False)
-          stdscr.keypad(True)
+    sub_choice = questionary.select(
+      f"【{section_label}】请选择要执行的操作（↑↓ 移动，Enter 确认，Esc 取消）：",
+      choices=sub_choices,
+    ).ask()
 
-  try:
-    import curses
+    if sub_choice is None or sub_choice == "back":
+      continue
+    if sub_choice == "quit":
+      print("已退出管理菜单。")
+      return
 
-    curses.wrapper(curses_main)
-    print("已退出管理菜单。")
-  except KeyboardInterrupt:
-    print("\n已退出管理菜单。")
-  except Exception as exc:  # noqa: BLE001
-    print(f"无法启用高级交互菜单（{exc}），请使用命令行子命令方式运行，例如：")
-    print("  uv run python -m app.manage user add-admin")
+    idx = int(sub_choice)
+    _label, action = actions[idx]
+    run_action(action)
 
 
 def main() -> None:
