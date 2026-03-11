@@ -111,7 +111,7 @@ uv run alembic upgrade head
 
 ### 2. 初始化管理员用户（示例）
 
-> 下面示例仅用于本地开发/测试，请根据公司账号体系调整。
+
 
 1. 在 Python REPL 中生成密码哈希（示例密码为 `Admin123!`）：
 
