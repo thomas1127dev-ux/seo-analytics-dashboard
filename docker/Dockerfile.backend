@@ -5,11 +5,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# 安装构建依赖（用于 mysqlclient 等）
+# 安装构建依赖：pkg-config 与 MySQL 客户端开发库（mysqlclient 编译需要）
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    pkg-config \
     default-libmysqlclient-dev \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 COPY backend/pyproject.toml /app/backend/pyproject.toml
 WORKDIR /app/backend
