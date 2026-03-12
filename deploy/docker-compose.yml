@@ -35,6 +35,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.frontend
       args:
+        NPM_REGISTRY: "${NPM_REGISTRY:-https://registry.npmmirror.com}"
         VITE_API_BASE_URL: "${PUBLIC_BACKEND_URL:-http://localhost:4000}"
     container_name: seo-dashboard-frontend
     env_file:

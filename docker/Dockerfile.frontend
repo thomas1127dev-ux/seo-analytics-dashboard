@@ -6,7 +6,9 @@ WORKDIR /app
 COPY frontend/package.json ./frontend/
 WORKDIR /app/frontend
 
-RUN npm install
+# 可配置 npm registry，默认使用官方源，生产环境可在 .env 中通过 NPM_REGISTRY 覆盖为公司/国内镜像
+ARG NPM_REGISTRY=https://registry.npmjs.org
+RUN npm config set registry ${NPM_REGISTRY} && npm install
 
 COPY frontend /app/frontend
 
