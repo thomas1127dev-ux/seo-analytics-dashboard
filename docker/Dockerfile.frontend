@@ -2,10 +2,11 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY frontend/package.json frontend/package-lock.json ./frontend/
+# 仅复制 package.json（package-lock.json 可能未提交），使用 npm install 以兼容无 lock 场景
+COPY frontend/package.json ./frontend/
 WORKDIR /app/frontend
 
-RUN npm ci
+RUN npm install
 
 COPY frontend /app/frontend
 
