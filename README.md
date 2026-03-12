@@ -168,11 +168,10 @@ npm run dev
 快速步骤（从一台“空白”机器开始）：
 
 1. 在目标机器上安装 Docker / docker compose。
-2. 运行引导脚本（示例）：
+2. 运行引导脚本（从 `openclaw-skill` 分支拉取并部署）：
 
    ```bash
-   # 将 <GITHUB_URL> 替换为实际公共仓库地址
-   curl -fsSL <GITHUB_URL>/bootstrap.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/thomas1127dev-ux/seo-analytics-dashboard/openclaw-skill/bootstrap.sh | bash
    ```
 
    引导脚本将完成：

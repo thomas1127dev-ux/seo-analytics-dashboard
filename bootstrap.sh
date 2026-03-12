@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="https://github.com/<org>/seo-analytics-dashboard.git"
+REPO_URL="https://github.com/thomas1127dev-ux/seo-analytics-dashboard.git"
+REPO_BRANCH="openclaw-skill"
 TARGET_DIR="seo-analytics-dashboard"
 
 if [ -d "$TARGET_DIR" ]; then
   echo "[info] 目标目录已存在：$TARGET_DIR，将直接进入并执行部署。"
 else
-  echo "[info] 正在从 GitHub 克隆仓库：$REPO_URL"
-  git clone "$REPO_URL" "$TARGET_DIR"
+  echo "[info] 正在从 GitHub 克隆仓库：$REPO_URL（分支：$REPO_BRANCH）"
+  git clone -b "$REPO_BRANCH" "$REPO_URL" "$TARGET_DIR"
 fi
 
 cd "$TARGET_DIR/deploy"

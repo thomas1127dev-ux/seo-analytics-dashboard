@@ -1,5 +1,9 @@
 # OpenClaw Skill 多环境配置模板
 # 各环境可覆盖 deploy/.env 中的变量，或供 openclaw_skill.py 读取
+#
+# 镜像/代码来源（用于一键部署与文档）：
+#   repo: https://github.com/thomas1127dev-ux/seo-analytics-dashboard.git
+#   branch: openclaw-skill
 
 environments:
   dev:
