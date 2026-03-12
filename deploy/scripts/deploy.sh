@@ -28,7 +28,7 @@ if [ ! -f ".env" ]; then
   fi
 fi
 
-echo "[info] 启动 / 更新容器……"
+echo "[info] 启动 / 更新容器（包含内置 MySQL，如果未改为外部数据库）……"
 if docker compose version >/dev/null 2>&1; then
   docker compose up -d --build
   COMPOSE_CMD="docker compose"
