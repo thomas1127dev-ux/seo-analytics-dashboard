@@ -18,7 +18,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (stored === "dark" || stored === "light") {
       return stored;
     }
-    // 默认统一使用深色主题，避免不同系统表现不一致
+    // 默认使用深色主题，避免不同系统表现不一致
     return "dark";
   });
 
