@@ -23,7 +23,11 @@ export interface Ga4OverviewMetrics {
   new_users: MetricWithTrend;
   returning_users: MetricWithTrend;
   retention_d1: MetricWithTrend;
+  retention_d2: MetricWithTrend;
   retention_d3: MetricWithTrend;
+  retention_d4: MetricWithTrend;
+  retention_d5: MetricWithTrend;
+  retention_d6: MetricWithTrend;
   retention_d7: MetricWithTrend;
 }
 

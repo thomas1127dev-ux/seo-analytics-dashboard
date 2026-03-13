@@ -148,7 +148,11 @@ export function OverviewPage() {
           <RetentionHeatmap
             newUsers={overviewQuery.data.ga4.new_users.trend_7d}
             d1={overviewQuery.data.ga4.retention_d1.trend_7d}
+            d2={overviewQuery.data.ga4.retention_d2.trend_7d}
             d3={overviewQuery.data.ga4.retention_d3.trend_7d}
+            d4={overviewQuery.data.ga4.retention_d4.trend_7d}
+            d5={overviewQuery.data.ga4.retention_d5.trend_7d}
+            d6={overviewQuery.data.ga4.retention_d6.trend_7d}
             d7={overviewQuery.data.ga4.retention_d7.trend_7d}
           />
         </>
@@ -262,18 +266,35 @@ function TrendCard({ title, data, color }: TrendCardProps) {
 interface RetentionHeatmapProps {
   newUsers: { date: string; value: number | null }[];
   d1: { date: string; value: number | null }[];
+  d2: { date: string; value: number | null }[];
   d3: { date: string; value: number | null }[];
+  d4: { date: string; value: number | null }[];
+  d5: { date: string; value: number | null }[];
+  d6: { date: string; value: number | null }[];
   d7: { date: string; value: number | null }[];
 }
 
-function RetentionHeatmap({ newUsers, d1, d3, d7 }: RetentionHeatmapProps) {
+function RetentionHeatmap({
+  newUsers,
+  d1,
+  d2,
+  d3,
+  d4,
+  d5,
+  d6,
+  d7
+}: RetentionHeatmapProps) {
   // 构建日期到值的快速索引
   const mapByDate = (arr: { date: string; value: number | null }[]) =>
     Object.fromEntries(arr.map((p) => [p.date, p.value ?? 0]));
 
   const newUsersMap = mapByDate(newUsers);
   const d1Map = mapByDate(d1);
+  const d2Map = mapByDate(d2);
   const d3Map = mapByDate(d3);
+  const d4Map = mapByDate(d4);
+  const d5Map = mapByDate(d5);
+  const d6Map = mapByDate(d6);
   const d7Map = mapByDate(d7);
 
   // 选取最近几天作为「首日接触」分组（cohort 行）
@@ -285,7 +306,11 @@ function RetentionHeatmap({ newUsers, d1, d3, d7 }: RetentionHeatmapProps) {
   const cols = [
     { key: "d0", label: "第 0 天", offset: 0, source: "new" as const },
     { key: "d1", label: "第 1 天", offset: 1, source: "d1" as const },
+    { key: "d2", label: "第 2 天", offset: 2, source: "d2" as const },
     { key: "d3", label: "第 3 天", offset: 3, source: "d3" as const },
+    { key: "d4", label: "第 4 天", offset: 4, source: "d4" as const },
+    { key: "d5", label: "第 5 天", offset: 5, source: "d5" as const },
+    { key: "d6", label: "第 6 天", offset: 6, source: "d6" as const },
     { key: "d7", label: "第 7 天", offset: 7, source: "d7" as const }
   ];
 
@@ -299,7 +324,11 @@ function RetentionHeatmap({ newUsers, d1, d3, d7 }: RetentionHeatmapProps) {
     const targetDate = addDays(cohortDate, col.offset);
     if (col.source === "new") return newUsersMap[cohortDate] ?? 0;
     if (col.source === "d1") return d1Map[targetDate] ?? 0;
+    if (col.source === "d2") return d2Map[targetDate] ?? 0;
     if (col.source === "d3") return d3Map[targetDate] ?? 0;
+    if (col.source === "d4") return d4Map[targetDate] ?? 0;
+    if (col.source === "d5") return d5Map[targetDate] ?? 0;
+    if (col.source === "d6") return d6Map[targetDate] ?? 0;
     if (col.source === "d7") return d7Map[targetDate] ?? 0;
     return 0;
   };

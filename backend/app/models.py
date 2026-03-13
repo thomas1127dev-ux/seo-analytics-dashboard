@@ -132,11 +132,15 @@ class Ga4Daily(Base):
     engagement_rate = Column(Float, nullable=True)
     bounce_rate = Column(Float, nullable=True)
 
-    # 新增 GA4 指标：新用户、老用户及 1/3/7 日留存人数
+    # 新增 GA4 指标：新用户、老用户及 1–7 日留存人数
     new_users = Column(Integer, nullable=True)
     returning_users = Column(Integer, nullable=True)
     retention_d1 = Column(Integer, nullable=True)
+    retention_d2 = Column(Integer, nullable=True)
     retention_d3 = Column(Integer, nullable=True)
+    retention_d4 = Column(Integer, nullable=True)
+    retention_d5 = Column(Integer, nullable=True)
+    retention_d6 = Column(Integer, nullable=True)
     retention_d7 = Column(Integer, nullable=True)
 
 

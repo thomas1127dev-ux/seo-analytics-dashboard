@@ -94,7 +94,7 @@ def fetch_ga4_daily_metrics(
     # 老用户数 = 日活 - 新增（不小于 0）
     returning_users = max(dau - new_users, 0)
 
-    # 2. 留存指标：根据 firstSessionDate 计算 1/3/7 日留存人数
+    # 2. 留存指标：根据 firstSessionDate 计算 1–7 日留存人数
     # 维度 firstSessionDate 使用 YYYYMMDD，需要与 target_date 做日期差。
     retention_request = RunReportRequest(
         property=f"properties/{property_id}",
@@ -105,9 +105,7 @@ def fetch_ga4_daily_metrics(
 
     retention_response = client.run_report(retention_request)
 
-    retention_d1 = 0
-    retention_d3 = 0
-    retention_d7 = 0
+    retention_buckets: dict[int, int] = {i: 0 for i in range(1, 8)}
 
     for row in retention_response.rows:
         first_session_raw = row.dimension_values[0].value  # e.g. '20260305'
@@ -117,14 +115,9 @@ def fetch_ga4_daily_metrics(
             f"{first_session_raw[0:4]}-{first_session_raw[4:6]}-{first_session_raw[6:8]}"
         )
         delta_days = (target_date - first_session_date).days
-        active_users = int(float(row.metric_values[0].value or 0.0))
-
-        if delta_days == 1:
-            retention_d1 += active_users
-        elif delta_days == 3:
-            retention_d3 += active_users
-        elif delta_days == 7:
-            retention_d7 += active_users
+        if 1 <= delta_days <= 7:
+            active_users = int(float(row.metric_values[0].value or 0.0))
+            retention_buckets[delta_days] += active_users
 
     return {
         "dau": dau,
@@ -135,9 +128,13 @@ def fetch_ga4_daily_metrics(
         "bounce_rate": bounce_rate,
         "new_users": new_users,
         "returning_users": returning_users,
-        "retention_d1": retention_d1,
-        "retention_d3": retention_d3,
-        "retention_d7": retention_d7,
+        "retention_d1": retention_buckets[1],
+        "retention_d2": retention_buckets[2],
+        "retention_d3": retention_buckets[3],
+        "retention_d4": retention_buckets[4],
+        "retention_d5": retention_buckets[5],
+        "retention_d6": retention_buckets[6],
+        "retention_d7": retention_buckets[7],
     }
 
 
