@@ -411,7 +411,7 @@ def _ingest_range(source: str, project_key: str, start: date, end: date) -> None
 
 
 def cmd_ingest_ga4_range(_args: argparse.Namespace) -> None:
-  print("=== 批量拉取 GA4 数据（日期区间）===")
+  print("=== 批量拉取 GA4 数据（日期区间，含新/老用户与留存指标）===")
   project_key = prompt("项目 key（projects.project_key）")
   start_str = prompt("开始日期 (YYYY-MM-DD)")
   end_str = prompt("结束日期 (YYYY-MM-DD)")
@@ -480,7 +480,10 @@ def build_parser() -> argparse.ArgumentParser:
   # ingest
   ingest_parser = subparsers.add_parser("ingest", help="批量数据拉取")
   ingest_sub = ingest_parser.add_subparsers(dest="sub", required=True)
-  ingest_sub.add_parser("ga4-range", help="按日期区间拉取 GA4 数据").set_defaults(
+  ingest_sub.add_parser(
+    "ga4-range",
+    help="按日期区间拉取 GA4 数据（含新/老用户与 1/3/7 日留存）",
+  ).set_defaults(
     func=cmd_ingest_ga4_range
   )
   ingest_sub.add_parser("gsc-range", help="按日期区间拉取 GSC 数据").set_defaults(
