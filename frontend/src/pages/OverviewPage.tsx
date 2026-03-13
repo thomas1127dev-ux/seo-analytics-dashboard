@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
 import { fetchOverview, type MetricWithTrend } from "../api/overview";
@@ -144,6 +144,13 @@ export function OverviewPage() {
               color="#38bdf8"
             />
           </div>
+
+          <RetentionHeatmap
+            endDate={endDate}
+            d1={overviewQuery.data.ga4.retention_d1.trend_7d}
+            d3={overviewQuery.data.ga4.retention_d3.trend_7d}
+            d7={overviewQuery.data.ga4.retention_d7.trend_7d}
+          />
         </>
       )}
     </div>
@@ -247,6 +254,89 @@ function TrendCard({ title, data, color }: TrendCardProps) {
             />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+interface RetentionHeatmapProps {
+  endDate: string;
+  d1: { date: string; value: number | null }[];
+  d3: { date: string; value: number | null }[];
+  d7: { date: string; value: number | null }[];
+}
+
+function RetentionHeatmap({ endDate, d1, d3, d7 }: RetentionHeatmapProps) {
+  const rows = [
+    { key: "d1", label: "次日留存人数", data: d1 },
+    { key: "d3", label: "3 日留存人数", data: d3 },
+    { key: "d7", label: "7 日留存人数", data: d7 }
+  ];
+
+  const allValues = rows.flatMap((row) =>
+    row.data.map((p) => (p.value == null ? 0 : p.value))
+  );
+  const max = Math.max(0, ...allValues);
+
+  const dates = d1.map((p) => p.date);
+
+  const getCellColor = (value: number | null) => {
+    if (value == null || max === 0) {
+      return "rgba(15,23,42,0.9)"; // 很深的灰色，表示无数据
+    }
+    const ratio = Math.min(1, value / max);
+    const lightness = 85 - ratio * 45; // 数值越大颜色越深
+    return `hsl(199 89% ${lightness}%)`; // 接近 Tailwind sky- 系列
+  };
+
+  return (
+    <div className="glass-card p-4">
+      <div className="section-title mb-3">
+        <span className="section-title-dot" />
+        <span>留存热力图（人数越多颜色越深）</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-center text-xs text-slate-200">
+          <thead>
+            <tr>
+              <th className="py-1 px-2 text-left text-slate-400">留存窗口</th>
+              {dates.map((d) => (
+                <th key={d} className="py-1 px-2 text-slate-400">
+                  {d.slice(5)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.key}>
+                <td className="py-1 pr-2 text-left text-slate-300 whitespace-nowrap">
+                  {row.label}
+                </td>
+                {row.data.map((p) => {
+                  const value = p.value;
+                  const bg = getCellColor(value);
+                  return (
+                    <td key={row.key + p.date} className="py-0.5 px-0.5">
+                      <div
+                        className="rounded-sm py-1"
+                        style={{
+                          backgroundColor: bg,
+                          color: value != null ? "#0f172a" : "#64748b"
+                        }}
+                      >
+                        {value != null ? Math.round(value).toLocaleString("zh-CN") : "-"}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-2 text-[10px] text-slate-500">
+          区间结束日期：{endDate}；仅展示最近 {dates.length} 天的留存人数，颜色按每行最大值自动分级。
+        </div>
       </div>
     </div>
   );
