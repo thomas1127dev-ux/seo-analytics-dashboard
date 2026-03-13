@@ -45,7 +45,12 @@ export function Layout({ children }: LayoutProps) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-full border border-slate-600/60 bg-slate-900/40 px-3 py-1 text-[11px] text-slate-200 shadow-sm shadow-black/40 transition hover:border-emerald-400/70 hover:bg-slate-900/80"
+              className={
+                "rounded-full px-3 py-1 text-[11px] transition shadow-sm " +
+                (isDark
+                  ? "border border-slate-600/60 bg-slate-900/40 text-slate-200 shadow-black/40 hover:border-emerald-400/70 hover:bg-slate-900/80"
+                  : "border border-slate-200 bg-white/80 text-slate-700 shadow-slate-900/5 hover:border-emerald-400/70 hover:bg-emerald-50/80")
+              }
             >
               {isDark ? "切换为浅色主题" : "切换为深色主题"}
             </button>
@@ -67,17 +72,36 @@ export function Layout({ children }: LayoutProps) {
             </button>
           </div>
         </header>
-        <nav className="mb-6 flex gap-2 rounded-full bg-slate-900/60 p-1 text-sm shadow-lg shadow-black/40 ring-1 ring-slate-800/80">
+        <nav
+          className={
+            "mb-6 flex gap-2 rounded-full p-1 text-sm shadow-lg ring-1 transition-colors " +
+            (isDark
+              ? "bg-slate-900/60 shadow-black/40 ring-slate-800/80"
+              : "bg-white/90 shadow-slate-900/5 ring-slate-200")
+          }
+        >
           {tabs.map((tab) => (
             <NavLink
               key={tab.path}
               to={tab.path}
-              className={({ isActive }) =>
-                "relative flex-1 rounded-full px-3 py-1 text-center transition-all duration-200 " +
-                (isActive
-                  ? "bg-emerald-500/10 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.35)]"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-slate-50")
-              }
+              className={({ isActive }) => {
+                const base =
+                  "relative flex-1 rounded-full px-3 py-1 text-center text-xs font-medium transition-all duration-200 ";
+                if (isDark) {
+                  return (
+                    base +
+                    (isActive
+                      ? "bg-emerald-500/10 text-emerald-200 shadow-[0_0_16px_rgba(16,185,129,0.35)]"
+                      : "text-slate-300 hover:bg-slate-800/80 hover:text-slate-50")
+                  );
+                }
+                return (
+                  base +
+                  (isActive
+                    ? "bg-emerald-500/10 text-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900")
+                );
+              }}
             >
               {tab.label}
             </NavLink>

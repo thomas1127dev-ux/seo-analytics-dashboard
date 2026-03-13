@@ -18,10 +18,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (stored === "dark" || stored === "light") {
       return stored;
     }
-    // 默认优先使用系统的深浅色偏好
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-      return "light";
-    }
+    // 默认统一使用深色主题，避免不同系统表现不一致
     return "dark";
   });
 

@@ -39,18 +39,25 @@ body.theme-light .section-title-dot {
 }
 
 /* react-day-picker 覆盖为更柔和的白色选中样式 */
-.rdp-root {
+body.theme-dark .rdp-root {
   --rdp-accent-color: #e5e7eb;
   --rdp-accent-background-color: #e5e7eb;
   --rdp-background-color: transparent;
   --rdp-color: #e5e7eb;
 }
 
+body.theme-light .rdp-root {
+  --rdp-accent-color: #10b981;
+  --rdp-accent-background-color: #22c55e1a;
+  --rdp-background-color: transparent;
+  --rdp-color: #0f172a;
+}
+
 .rdp-day_selected,
 .rdp-day_selected:focus-visible,
 .rdp-day_selected:hover {
-  background-color: #e5e7eb !important;
-  color: #020617 !important;
+  background-color: var(--rdp-accent-background-color) !important;
+  color: var(--rdp-color) !important;
 }
 
 .rdp-day_today:not(.rdp-day_selected) {

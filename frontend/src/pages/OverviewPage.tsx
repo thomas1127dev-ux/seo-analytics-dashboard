@@ -12,6 +12,7 @@ import {
   YAxis,
   CartesianGrid
 } from "recharts";
+import { useTheme } from "../theme/ThemeContext";
 
 const DEFAULT_DAYS = 7;
 
@@ -284,6 +285,8 @@ function RetentionHeatmap({
   d6,
   d7
 }: RetentionHeatmapProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   // 构建日期到值的快速索引
   const mapByDate = (arr: { date: string; value: number | null }[]) =>
     Object.fromEntries(arr.map((p) => [p.date, p.value ?? 0]));
@@ -333,18 +336,20 @@ function RetentionHeatmap({
     return 0;
   };
 
-  const allValues = cohortDates.flatMap((d) =>
-    cols.map((c) => getValue(d, c))
-  );
+  const allValues = cohortDates.flatMap((d) => cols.map((c) => getValue(d, c)));
   const max = Math.max(0, ...allValues);
 
   const getCellColor = (value: number) => {
     if (!value || max === 0) {
-      return "rgba(15,23,42,0.9)";
+      return isDark ? "rgba(15,23,42,0.9)" : "rgba(241,245,249,1)"; // slate-100
     }
     const ratio = Math.min(1, value / max);
-    const lightness = 85 - ratio * 45;
-    return `hsl(215 80% ${lightness}%)`;
+    if (isDark) {
+      const lightness = 85 - ratio * 45;
+      return `hsl(215 80% ${lightness}%)`; // 深色下的海军蓝渐变
+    }
+    const lightness = 94 - ratio * 40;
+    return `hsl(204 90% ${lightness}%)`; // 浅色下的天蓝渐变
   };
 
   return (
@@ -354,12 +359,30 @@ function RetentionHeatmap({
         <span>GA4 留存分群分析（同类群表）</span>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-center text-xs text-slate-200">
+        <table
+          className={
+            "min-w-full text-center text-xs " +
+            (isDark ? "text-slate-200" : "text-slate-800")
+          }
+        >
           <thead>
             <tr>
-              <th className="py-1 px-2 text-left text-slate-400">首日接触日期</th>
+              <th
+                className={
+                  "py-1 px-2 text-left " +
+                  (isDark ? "text-slate-400" : "text-slate-500")
+                }
+              >
+                首日接触日期
+              </th>
               {cols.map((c) => (
-                <th key={c.key} className="py-1 px-2 text-slate-400">
+                <th
+                  key={c.key}
+                  className={
+                    "py-1 px-2 " +
+                    (isDark ? "text-slate-400" : "text-slate-500")
+                  }
+                >
                   {c.label}
                 </th>
               ))}
@@ -370,7 +393,12 @@ function RetentionHeatmap({
               const base = newUsersMap[d] ?? 0;
               return (
                 <tr key={d}>
-                  <td className="py-1 pr-2 text-left text-slate-300 whitespace-nowrap">
+                  <td
+                    className={
+                      "py-1 pr-2 text-left whitespace-nowrap " +
+                      (isDark ? "text-slate-300" : "text-slate-700")
+                    }
+                  >
                     {d}
                     {base ? (
                       <span className="ml-1 text-[10px] text-slate-500">
@@ -387,7 +415,13 @@ function RetentionHeatmap({
                           className="rounded-sm py-1"
                           style={{
                             backgroundColor: bg,
-                            color: value ? "#0f172a" : "#64748b"
+                            color: value
+                              ? isDark
+                                ? "#0f172a"
+                                : "#0f172a"
+                              : isDark
+                              ? "#64748b"
+                              : "#94a3b8"
                           }}
                         >
                           {value ? Math.round(value).toLocaleString("zh-CN") : "-"}
