@@ -18,6 +18,13 @@ export interface Ga4OverviewMetrics {
   avg_engagement_time: MetricWithTrend;
   engagement_rate: MetricWithTrend;
   bounce_rate: MetricWithTrend;
+
+  // 新增：新用户、老用户以及 1/3/7 日留存人数
+  new_users: MetricWithTrend;
+  returning_users: MetricWithTrend;
+  retention_d1: MetricWithTrend;
+  retention_d3: MetricWithTrend;
+  retention_d7: MetricWithTrend;
 }
 
 export interface SearchOverviewMetrics {

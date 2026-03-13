@@ -80,21 +80,40 @@ export function OverviewPage() {
       {overviewQuery.data && (
         <>
           <div className="grid gap-4 md:grid-cols-3">
+            {/* GA4 核心指标 */}
             <KpiCard
               title="日活跃用户"
               metric={overviewQuery.data.ga4.dau}
               expectedDate={endDate}
             />
             <KpiCard
-              title="会话数"
-              metric={overviewQuery.data.ga4.sessions}
+              title="新用户数"
+              metric={overviewQuery.data.ga4.new_users}
               expectedDate={endDate}
             />
             <KpiCard
-              title="页面浏览量"
-              metric={overviewQuery.data.ga4.page_views}
+              title="老用户数"
+              metric={overviewQuery.data.ga4.returning_users}
               expectedDate={endDate}
             />
+
+            <KpiCard
+              title="次日留存人数"
+              metric={overviewQuery.data.ga4.retention_d1}
+              expectedDate={endDate}
+            />
+            <KpiCard
+              title="3 日留存人数"
+              metric={overviewQuery.data.ga4.retention_d3}
+              expectedDate={endDate}
+            />
+            <KpiCard
+              title="7 日留存人数"
+              metric={overviewQuery.data.ga4.retention_d7}
+              expectedDate={endDate}
+            />
+
+            {/* GSC 指标 */}
             <KpiCard
               title="GSC 展示"
               metric={overviewQuery.data.gsc.impressions}
