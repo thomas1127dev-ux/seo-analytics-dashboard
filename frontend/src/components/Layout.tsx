@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../theme/ThemeContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -17,9 +18,19 @@ const tabs = [
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+
+  const isDark = theme === "dark";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+    <div
+      className={
+        "min-h-screen transition-colors duration-300 " +
+        (isDark
+          ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50"
+          : "bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-900")
+      }
+    >
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-6">
         <header className="mb-4 flex items-center justify-between gap-4">
           <div>
@@ -31,6 +42,13 @@ export function Layout({ children }: LayoutProps) {
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-400">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-full border border-slate-600/60 bg-slate-900/40 px-3 py-1 text-[11px] text-slate-200 shadow-sm shadow-black/40 transition hover:border-emerald-400/70 hover:bg-slate-900/80"
+            >
+              {isDark ? "切换为浅色主题" : "切换为深色主题"}
+            </button>
             {user && (
               <span className="hidden md:inline">
                 已登录：{user.name}（{user.email}

@@ -3,19 +3,39 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-950 text-slate-50 antialiased;
+  @apply antialiased;
+}
+
+body.theme-dark {
+  @apply bg-slate-950 text-slate-50;
+}
+
+body.theme-light {
+  @apply bg-slate-50 text-slate-900;
 }
 
 .glass-card {
   @apply rounded-xl border border-slate-800/80 bg-slate-900/60 shadow-lg shadow-black/40 backdrop-blur;
 }
 
+body.theme-light .glass-card {
+  @apply border-slate-200 bg-white/90 shadow-lg shadow-slate-900/5;
+}
+
 .section-title {
   @apply mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400;
 }
 
+body.theme-light .section-title {
+  @apply text-slate-500;
+}
+
 .section-title-dot {
   @apply h-1.5 w-1.5 rounded-full bg-emerald-400;
+}
+
+body.theme-light .section-title-dot {
+  @apply bg-emerald-500;
 }
 
 /* react-day-picker 覆盖为更柔和的白色选中样式 */
