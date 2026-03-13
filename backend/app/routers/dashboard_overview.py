@@ -65,6 +65,11 @@ def get_overview(
             models.Ga4Daily.avg_engagement_time,
             models.Ga4Daily.engagement_rate,
             models.Ga4Daily.bounce_rate,
+            func.coalesce(models.Ga4Daily.new_users, 0).label("new_users"),
+            func.coalesce(models.Ga4Daily.returning_users, 0).label("returning_users"),
+            func.coalesce(models.Ga4Daily.retention_d1, 0).label("retention_d1"),
+            func.coalesce(models.Ga4Daily.retention_d3, 0).label("retention_d3"),
+            func.coalesce(models.Ga4Daily.retention_d7, 0).label("retention_d7"),
         )
         .filter(
             models.Ga4Daily.project_id == project_id,
@@ -91,6 +96,12 @@ def get_overview(
         for r in ga4_rows
     ]
 
+    ga4_new_users_series = [(r.date, float(r.new_users)) for r in ga4_rows]
+    ga4_returning_users_series = [(r.date, float(r.returning_users)) for r in ga4_rows]
+    ga4_retention_d1_series = [(r.date, float(r.retention_d1)) for r in ga4_rows]
+    ga4_retention_d3_series = [(r.date, float(r.retention_d3)) for r in ga4_rows]
+    ga4_retention_d7_series = [(r.date, float(r.retention_d7)) for r in ga4_rows]
+
     ga4_metrics = schemas.Ga4OverviewMetrics(
         dau=_build_metric_with_trend(ga4_dau_series, start_date, end_date),
         sessions=_build_metric_with_trend(ga4_sessions_series, start_date, end_date),
@@ -103,6 +114,21 @@ def get_overview(
         ),
         bounce_rate=_build_metric_with_trend(
             ga4_bounce_rate_series, start_date, end_date
+        ),
+        new_users=_build_metric_with_trend(
+            ga4_new_users_series, start_date, end_date
+        ),
+        returning_users=_build_metric_with_trend(
+            ga4_returning_users_series, start_date, end_date
+        ),
+        retention_d1=_build_metric_with_trend(
+            ga4_retention_d1_series, start_date, end_date
+        ),
+        retention_d3=_build_metric_with_trend(
+            ga4_retention_d3_series, start_date, end_date
+        ),
+        retention_d7=_build_metric_with_trend(
+            ga4_retention_d7_series, start_date, end_date
         ),
     )
 

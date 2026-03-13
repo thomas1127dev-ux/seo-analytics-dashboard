@@ -8,6 +8,8 @@ from google.analytics.data_v1beta import (  # type: ignore
     BetaAnalyticsDataClient,
     DateRange,
     Dimension,
+    Filter,
+    FilterExpression,
     Metric,
     RunReportRequest,
 )
@@ -57,7 +59,8 @@ def fetch_ga4_daily_metrics(
 
     date_str = target_date.strftime("%Y-%m-%d")
 
-    request = RunReportRequest(
+    # 1. 汇总指标：日活、会话、PV、平均会话时长、参与率、跳出率、新用户
+    summary_request = RunReportRequest(
         property=f"properties/{property_id}",
         date_ranges=[DateRange(start_date=date_str, end_date=date_str)],
         metrics=[
@@ -67,22 +70,74 @@ def fetch_ga4_daily_metrics(
             Metric(name="averageSessionDuration"),
             Metric(name="engagementRate"),
             Metric(name="bounceRate"),
+            Metric(name="newUsers"),
         ],
     )
 
-    response = client.run_report(request)
-    if not response.rows:
+    summary_response = client.run_report(summary_request)
+    if not summary_response.rows:
         return {}
 
-    values = [float(v.value) if v.value else 0.0 for v in response.rows[0].metric_values]
+    summary_values = [
+        float(v.value) if v.value else 0.0
+        for v in summary_response.rows[0].metric_values
+    ]
+
+    dau = int(summary_values[0])
+    sessions = int(summary_values[1])
+    page_views = int(summary_values[2])
+    avg_engagement_time = summary_values[3]
+    engagement_rate = summary_values[4]
+    bounce_rate = summary_values[5]
+    new_users = int(summary_values[6])
+
+    # 老用户数 = 日活 - 新增（不小于 0）
+    returning_users = max(dau - new_users, 0)
+
+    # 2. 留存指标：根据 firstSessionDate 计算 1/3/7 日留存人数
+    # 维度 firstSessionDate 使用 YYYYMMDD，需要与 target_date 做日期差。
+    retention_request = RunReportRequest(
+        property=f"properties/{property_id}",
+        date_ranges=[DateRange(start_date=date_str, end_date=date_str)],
+        dimensions=[Dimension(name="firstSessionDate")],
+        metrics=[Metric(name="activeUsers")],
+    )
+
+    retention_response = client.run_report(retention_request)
+
+    retention_d1 = 0
+    retention_d3 = 0
+    retention_d7 = 0
+
+    for row in retention_response.rows:
+        first_session_raw = row.dimension_values[0].value  # e.g. '20260305'
+        if not first_session_raw:
+            continue
+        first_session_date = date.fromisoformat(
+            f"{first_session_raw[0:4]}-{first_session_raw[4:6]}-{first_session_raw[6:8]}"
+        )
+        delta_days = (target_date - first_session_date).days
+        active_users = int(float(row.metric_values[0].value or 0.0))
+
+        if delta_days == 1:
+            retention_d1 += active_users
+        elif delta_days == 3:
+            retention_d3 += active_users
+        elif delta_days == 7:
+            retention_d7 += active_users
 
     return {
-        "dau": int(values[0]),
-        "sessions": int(values[1]),
-        "page_views": int(values[2]),
-        "avg_engagement_time": values[3],
-        "engagement_rate": values[4],
-        "bounce_rate": values[5],
+        "dau": dau,
+        "sessions": sessions,
+        "page_views": page_views,
+        "avg_engagement_time": avg_engagement_time,
+        "engagement_rate": engagement_rate,
+        "bounce_rate": bounce_rate,
+        "new_users": new_users,
+        "returning_users": returning_users,
+        "retention_d1": retention_d1,
+        "retention_d3": retention_d3,
+        "retention_d7": retention_d7,
     }
 
 
