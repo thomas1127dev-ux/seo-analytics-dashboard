@@ -1,0 +1,63 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: seo-dashboard-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root}"
+      MYSQL_DATABASE: "${DB_NAME:-seo_analytics_dashboard}"
+      MYSQL_USER: "${DB_USER:-seoapp}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-seoapp_pass}"
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: seo-dashboard-backend
+    env_file:
+      - .env
+    environment:
+      PORT: "${BACKEND_PORT:-4000}"
+      FRONTEND_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:5173}"
+      DB_HOST: "${DB_HOST:-mysql}"
+      DB_PORT: "${DB_PORT:-3306}"
+      DB_USER: "${DB_USER:-seoapp}"
+      DB_PASSWORD: "${DB_PASSWORD:-seoapp_pass}"
+      DB_NAME: "${DB_NAME:-seo_analytics_dashboard}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
+      JWT_ALGORITHM: "${JWT_ALGORITHM}"
+      ACCESS_TOKEN_EXPIRES_MINUTES: "${ACCESS_TOKEN_EXPIRES_MINUTES}"
+      GOOGLE_SERVICE_ACCOUNT_JSON: "${GOOGLE_SERVICE_ACCOUNT_JSON:-}"
+      GOOGLE_APPLICATION_CREDENTIALS: "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+      YANDEX_ACCESS_TOKEN: "${YANDEX_ACCESS_TOKEN:-}"
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        NPM_REGISTRY: "${NPM_REGISTRY:-https://registry.npmmirror.com}"
+        VITE_API_BASE_URL: "${PUBLIC_BACKEND_URL:-http://localhost:4000}"
+    container_name: seo-dashboard-frontend
+    env_file:
+      - .env
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

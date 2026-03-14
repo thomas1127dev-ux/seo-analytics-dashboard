@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects } from "../api/projects";
 import { fetchOverview, type MetricWithTrend } from "../api/overview";
@@ -12,6 +12,7 @@ import {
   YAxis,
   CartesianGrid
 } from "recharts";
+import { useTheme } from "../theme/ThemeContext";
 
 const DEFAULT_DAYS = 7;
 
@@ -80,21 +81,40 @@ export function OverviewPage() {
       {overviewQuery.data && (
         <>
           <div className="grid gap-4 md:grid-cols-3">
+            {/* GA4 核心指标 */}
             <KpiCard
               title="日活跃用户"
               metric={overviewQuery.data.ga4.dau}
               expectedDate={endDate}
             />
             <KpiCard
-              title="会话数"
-              metric={overviewQuery.data.ga4.sessions}
+              title="新用户数"
+              metric={overviewQuery.data.ga4.new_users}
               expectedDate={endDate}
             />
             <KpiCard
-              title="页面浏览量"
-              metric={overviewQuery.data.ga4.page_views}
+              title="老用户数"
+              metric={overviewQuery.data.ga4.returning_users}
               expectedDate={endDate}
             />
+
+            <KpiCard
+              title="次日留存人数"
+              metric={overviewQuery.data.ga4.retention_d1}
+              expectedDate={endDate}
+            />
+            <KpiCard
+              title="3 日留存人数"
+              metric={overviewQuery.data.ga4.retention_d3}
+              expectedDate={endDate}
+            />
+            <KpiCard
+              title="7 日留存人数"
+              metric={overviewQuery.data.ga4.retention_d7}
+              expectedDate={endDate}
+            />
+
+            {/* GSC 指标 */}
             <KpiCard
               title="GSC 展示"
               metric={overviewQuery.data.gsc.impressions}
@@ -125,6 +145,17 @@ export function OverviewPage() {
               color="#38bdf8"
             />
           </div>
+
+          <RetentionHeatmap
+            newUsers={overviewQuery.data.ga4.new_users.trend_7d}
+            d1={overviewQuery.data.ga4.retention_d1.trend_7d}
+            d2={overviewQuery.data.ga4.retention_d2.trend_7d}
+            d3={overviewQuery.data.ga4.retention_d3.trend_7d}
+            d4={overviewQuery.data.ga4.retention_d4.trend_7d}
+            d5={overviewQuery.data.ga4.retention_d5.trend_7d}
+            d6={overviewQuery.data.ga4.retention_d6.trend_7d}
+            d7={overviewQuery.data.ga4.retention_d7.trend_7d}
+          />
         </>
       )}
     </div>
@@ -228,6 +259,184 @@ function TrendCard({ title, data, color }: TrendCardProps) {
             />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+interface RetentionHeatmapProps {
+  newUsers: { date: string; value: number | null }[];
+  d1: { date: string; value: number | null }[];
+  d2: { date: string; value: number | null }[];
+  d3: { date: string; value: number | null }[];
+  d4: { date: string; value: number | null }[];
+  d5: { date: string; value: number | null }[];
+  d6: { date: string; value: number | null }[];
+  d7: { date: string; value: number | null }[];
+}
+
+function RetentionHeatmap({
+  newUsers,
+  d1,
+  d2,
+  d3,
+  d4,
+  d5,
+  d6,
+  d7
+}: RetentionHeatmapProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  // 构建日期到值的快速索引
+  const mapByDate = (arr: { date: string; value: number | null }[]) =>
+    Object.fromEntries(arr.map((p) => [p.date, p.value ?? 0]));
+
+  const newUsersMap = mapByDate(newUsers);
+  const d1Map = mapByDate(d1);
+  const d2Map = mapByDate(d2);
+  const d3Map = mapByDate(d3);
+  const d4Map = mapByDate(d4);
+  const d5Map = mapByDate(d5);
+  const d6Map = mapByDate(d6);
+  const d7Map = mapByDate(d7);
+
+  // 选取最近几天作为「首日接触」分组（cohort 行）
+  const cohortDates = newUsers
+    .map((p) => p.date)
+    .filter((d) => newUsersMap[d] && newUsersMap[d]! > 0)
+    .slice(-7); // 最近 7 个 cohort
+
+  const cols = [
+    { key: "d0", label: "第 0 天", offset: 0, source: "new" as const },
+    { key: "d1", label: "第 1 天", offset: 1, source: "d1" as const },
+    { key: "d2", label: "第 2 天", offset: 2, source: "d2" as const },
+    { key: "d3", label: "第 3 天", offset: 3, source: "d3" as const },
+    { key: "d4", label: "第 4 天", offset: 4, source: "d4" as const },
+    { key: "d5", label: "第 5 天", offset: 5, source: "d5" as const },
+    { key: "d6", label: "第 6 天", offset: 6, source: "d6" as const },
+    { key: "d7", label: "第 7 天", offset: 7, source: "d7" as const }
+  ];
+
+  const addDays = (d: string, offset: number) => {
+    const base = new Date(d + "T00:00:00");
+    base.setDate(base.getDate() + offset);
+    return base.toISOString().slice(0, 10);
+  };
+
+  const getValue = (cohortDate: string, col: (typeof cols)[number]) => {
+    const targetDate = addDays(cohortDate, col.offset);
+    if (col.source === "new") return newUsersMap[cohortDate] ?? 0;
+    if (col.source === "d1") return d1Map[targetDate] ?? 0;
+    if (col.source === "d2") return d2Map[targetDate] ?? 0;
+    if (col.source === "d3") return d3Map[targetDate] ?? 0;
+    if (col.source === "d4") return d4Map[targetDate] ?? 0;
+    if (col.source === "d5") return d5Map[targetDate] ?? 0;
+    if (col.source === "d6") return d6Map[targetDate] ?? 0;
+    if (col.source === "d7") return d7Map[targetDate] ?? 0;
+    return 0;
+  };
+
+  const allValues = cohortDates.flatMap((d) => cols.map((c) => getValue(d, c)));
+  const max = Math.max(0, ...allValues);
+
+  const getCellColor = (value: number) => {
+    if (!value || max === 0) {
+      return isDark ? "rgba(15,23,42,0.9)" : "rgba(241,245,249,1)"; // slate-100
+    }
+    const ratio = Math.min(1, value / max);
+    if (isDark) {
+      const lightness = 85 - ratio * 45;
+      return `hsl(215 80% ${lightness}%)`; // 深色下的海军蓝渐变
+    }
+    const lightness = 94 - ratio * 40;
+    return `hsl(204 90% ${lightness}%)`; // 浅色下的天蓝渐变
+  };
+
+  return (
+    <div className="glass-card p-4">
+      <div className="section-title mb-3">
+        <span className="section-title-dot" />
+        <span>GA4 留存分群分析（同类群表）</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table
+          className={
+            "min-w-full text-center text-xs " +
+            (isDark ? "text-slate-200" : "text-slate-800")
+          }
+        >
+          <thead>
+            <tr>
+              <th
+                className={
+                  "py-1 px-2 text-left " +
+                  (isDark ? "text-slate-400" : "text-slate-500")
+                }
+              >
+                首日接触日期
+              </th>
+              {cols.map((c) => (
+                <th
+                  key={c.key}
+                  className={
+                    "py-1 px-2 " +
+                    (isDark ? "text-slate-400" : "text-slate-500")
+                  }
+                >
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {cohortDates.map((d) => {
+              const base = newUsersMap[d] ?? 0;
+              return (
+                <tr key={d}>
+                  <td
+                    className={
+                      "py-1 pr-2 text-left whitespace-nowrap " +
+                      (isDark ? "text-slate-300" : "text-slate-700")
+                    }
+                  >
+                    {d}
+                    {base ? (
+                      <span className="ml-1 text-[10px] text-slate-500">
+                        （首日活跃 {Math.round(base).toLocaleString("zh-CN")} 人）
+                      </span>
+                    ) : null}
+                  </td>
+                  {cols.map((c) => {
+                    const value = getValue(d, c);
+                    const bg = getCellColor(value);
+                    return (
+                      <td key={d + c.key} className="py-0.5 px-0.5">
+                        <div
+                          className="rounded-sm py-1"
+                          style={{
+                            backgroundColor: bg,
+                            color: value
+                              ? isDark
+                                ? "#0f172a"
+                                : "#0f172a"
+                              : isDark
+                              ? "#64748b"
+                              : "#94a3b8"
+                          }}
+                        >
+                          {value ? Math.round(value).toLocaleString("zh-CN") : "-"}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="mt-2 text-[10px] text-slate-500">
+          行代表某天首次接触（首日活跃用户数），列代表第 N 天仍然活跃的人数，颜色按整张表的最大值自动分级，人数越多颜色越深。
+        </div>
       </div>
     </div>
   );

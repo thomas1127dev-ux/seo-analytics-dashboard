@@ -44,6 +44,17 @@ class Ga4OverviewMetrics(BaseModel):
     engagement_rate: MetricWithTrend
     bounce_rate: MetricWithTrend
 
+    # 新增：新用户、老用户以及 1–7 日留存
+    new_users: MetricWithTrend
+    returning_users: MetricWithTrend
+    retention_d1: MetricWithTrend
+    retention_d2: MetricWithTrend
+    retention_d3: MetricWithTrend
+    retention_d4: MetricWithTrend
+    retention_d5: MetricWithTrend
+    retention_d6: MetricWithTrend
+    retention_d7: MetricWithTrend
+
 
 class SearchOverviewMetrics(BaseModel):
     impressions: MetricWithTrend

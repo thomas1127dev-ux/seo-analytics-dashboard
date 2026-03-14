@@ -111,7 +111,7 @@ uv run alembic upgrade head
 
 ### 2. 初始化管理员用户（示例）
 
-> 下面示例仅用于本地开发/测试，请根据公司账号体系调整。
+
 
 1. 在 Python REPL 中生成密码哈希（示例密码为 `Admin123!`）：
 
@@ -155,6 +155,34 @@ npm run dev
 ```
 
 浏览器访问 `http://localhost:5173`（或终端提示的地址）。若需通过 ngrok 等公网域名访问，请将前端的 `VITE_API_BASE_URL` 指向后端公网地址，并在后端 `FRONTEND_ORIGIN` 中加入该前端域名，避免 CORS 与“公网访问 localhost”被浏览器拦截。
+
+---
+
+## 容器化部署（运维 / OpenClaw）
+
+面向运维的一键部署与 OpenClaw Skill 封装说明见：
+
+- **运维部署教程**：[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
+- **OpenClaw Skill 方案**：[docs/OPENCLAW_SKILL.md](docs/OPENCLAW_SKILL.md)
+
+快速步骤（从一台“空白”机器开始）：
+
+1. 在目标机器上安装 Docker / docker compose。
+2. 运行引导脚本（从 `openclaw-skill` 分支拉取并部署）：
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/thomas1127dev-ux/seo-analytics-dashboard/openclaw-skill/bootstrap.sh | bash
+   ```
+
+   引导脚本将完成：
+
+   - 从 GitHub 克隆本仓库到本地；
+   - 进入 `deploy` 目录；
+   - 按需创建 `deploy/.env` 并调用 `scripts/deploy.sh`，完成容器构建、启动与数据库迁移。
+
+3. 根据终端输出提示访问前端地址（默认 `http://localhost:5173`）并登录。
+
+在自动化场景下，OpenClaw 也可以直接通过 `deploy/scripts/openclaw_skill.py` 调用 `deploy` / `upgrade` / `status` 子命令，输出为 JSON，便于集成。
 
 ---
 
